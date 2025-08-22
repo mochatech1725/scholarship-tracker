@@ -3,13 +3,13 @@ import logging
 from typing import Dict, Type, Optional
 from abc import ABC
 
-from base_scraper import BaseScraper
-from careeronestop_scraper import CareerOneStopScraper
-from collegescholarship_scraper import CollegeScholarshipScraper
-from general_scraper import GeneralScraper
-from rss_scraper import RSSScraper
-from scholarship_types import ScrapingResult
-from config_manager import get_scraper_type
+from .base_scraper import BaseScraper
+from .careeronestop_scraper import CareerOneStopScraper
+from .collegescholarship_scraper import CollegeScholarshipScraper
+from .general_scraper import GeneralScraper
+from .rss_scraper import RSSScraper
+from ..scholarship_types import ScrapingResult
+from ..config_manager import get_scraper_type
 
 logger = logging.getLogger(__name__)
 

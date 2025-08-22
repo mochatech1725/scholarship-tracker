@@ -9,8 +9,8 @@ import requests
 import time
 import xml.etree.ElementTree as ET
 from typing import List, Dict, Any, Optional
-from base_scraper import BaseScraper
-from scholarship_types import Scholarship, ScrapingResult, ScrapingMetadata
+from .base_scraper import BaseScraper
+from ..scholarship_types import Scholarship, ScrapingResult, ScrapingMetadata
 
 logger = logging.getLogger(__name__)
 

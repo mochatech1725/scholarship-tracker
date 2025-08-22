@@ -13,8 +13,8 @@ from dotenv import load_dotenv
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from scraper_factory import ScraperOrchestrator, list_available_scrapers, run_scraper
-from scholarship_types import ScrapingResult
+from src.scrapers.scraper_factory import ScraperOrchestrator, list_available_scrapers, run_scraper
+from src.scholarship_types import ScrapingResult
 
 # Load environment variables
 load_dotenv()
