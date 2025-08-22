@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from .base_scraper import BaseScraper
-from ..scholarship_types import Scholarship, ScrapingResult, ScrapingMetadata
+from ..utils_python import Scholarship, ScrapingResult, ScrapingMetadata
 
 logger = logging.getLogger(__name__)
 

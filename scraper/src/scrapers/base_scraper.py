@@ -10,7 +10,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 import boto3
 from dotenv import load_dotenv
 
-from ..scholarship_types import Scholarship, ScrapingResult, ScrapingMetadata
+from ..utils_python import Scholarship, ScrapingResult, ScrapingMetadata
 
 # Load environment variables
 load_dotenv()

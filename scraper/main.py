@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.scrapers.scraper_factory import ScraperOrchestrator, list_available_scrapers, run_scraper
-from src.scholarship_types import ScrapingResult
+from src.utils_python import ScrapingResult
 
 # Load environment variables
 load_dotenv()

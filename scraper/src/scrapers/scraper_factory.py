@@ -8,8 +8,8 @@ from .careeronestop_scraper import CareerOneStopScraper
 from .collegescholarship_scraper import CollegeScholarshipScraper
 from .general_scraper import GeneralScraper
 from .rss_scraper import RSSScraper
-from ..scholarship_types import ScrapingResult
-from ..config_manager import get_scraper_type
+from ..utils_python import ScrapingResult
+from ..utils_python import get_scraper_type
 
 logger = logging.getLogger(__name__)
 
