@@ -1,0 +1,83 @@
+{
+  "studentId": "auth0|6844d51eecdb753254ed6d53",
+  "scholarshipName": "Test Scholarship",
+  "targetType": "Merit",
+  "company": "Test Company",
+  "companyWebsite": "https://testcompany.com",
+  "applicationLink": "https://testcompany.com/apply",
+  "amount": 5000,
+  "platform": "Common App",
+  "theme": "Leadership",
+  "openDate": "2024-01-01",
+  "dueDate": "2024-05-01",
+  "submissionDate": "2024-04-15",
+  "status": "In Progress",
+  "currentAction": "Waiting for Recommendations",
+  "renewable": true,
+  "requirements": "Test requirements",
+  "recommendations": [
+    {
+      "_id": "507f1f77bcf86cd799439011",
+      "recommender": {
+        "_id": "507f1f77bcf86cd799439012",
+        "firstName": "John",
+        "lastName": "Smith",
+        "emailAddress": "john.smith@school.edu",
+        "phoneNumber": "555-0123"
+      },
+      "status": "Pending",
+      "requestDate": "2024-03-01",
+      "dueDate": "2024-04-01",
+      "submissionMethod": "DirectEmail",
+      "submissionDate": null
+    },
+    {
+      "_id": "507f1f77bcf86cd799439012",
+      "recommender": {
+        "_id": "507f1f77bcf86cd799439013",
+        "firstName": "Sarah",
+        "lastName": "Johnson",
+        "emailAddress": "sarah.johnson@company.com",
+        "phoneNumber": "555-0124",
+        "relationship": "Work Supervisor"
+      },
+      "status": "Submitted",
+      "requestDate": "2024-03-01",
+      "dueDate": "2024-04-01",
+      "submissionMethod": "DirectEmail",
+      "submissionDate": "2024-03-15"
+    },
+    {
+      "_id": "507f1f77bcf86cd799439013",
+      "recommender": {
+        "_id": "507f1f77bcf86cd799439014",
+        "firstName": "Michael",
+        "lastName": "Brown",
+        "emailAddress": "michael.brown@school.edu",
+        "phoneNumber": "555-0125",
+        "relationship": "Research Advisor"
+      },
+      "status": "Submitted",
+      "requestDate": "2024-03-01",
+      "dueDate": "2024-04-01",
+      "submissionMethod": "DirectEmail",
+      "submissionDate": null
+    }
+  ],
+  "essays": [
+    {
+      "_id": "essay-1",
+      "essayLink": "https://docs.google.com/document/d/essay1",
+      "count": 500,
+      "units": "words",
+      "theme": "Leadership Experience"
+    },
+    {
+      "_id": "essay-2",
+      "essayLink": "https://docs.google.com/document/d/essay2",
+      "count": 1000,
+      "units": "characters",
+      "theme": "Personal Statement"
+    }
+  ]
+} 

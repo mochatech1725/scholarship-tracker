@@ -1,0 +1,70 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Server",
+      "program": "${workspaceFolder}/server/src/index.ts",
+      "runtimeArgs": ["--loader", "ts-node/esm"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/server/dist/**/*.js"],
+      "preLaunchTask": "Build Server"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run Server Debug",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "options": {
+        "cwd": "${workspaceFolder}/server"
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Client",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "options": {
+        "cwd": "${workspaceFolder}/client"
+      }
+    },
+    {
+      "type": "python",
+      "request": "launch",
+      "name": "Debug Scraper",
+      "program": "${workspaceFolder}/scraper/main.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}/scraper",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/scraper"
+      }
+    }
+  ]
+}

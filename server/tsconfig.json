@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "*": ["node_modules/*"]
+    },
+    "sourceMap": true,
+    "inlineSourceMap": false,
+    "inlineSources": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+} 

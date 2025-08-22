@@ -1,0 +1,742 @@
+// app global css in SCSS form
+
+// Global styles
+:root {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  
+  // Green-inspired color palette
+  --q-primary: #05961d; 
+  --q-secondary: #10b981;
+  --q-accent: #F59E0B; 
+  --q-positive: #10B981; 
+  --q-negative: #EF4444;
+  --q-warning: #F59E0B; 
+  --q-info: #3B82F6;
+  
+  // Label colors - changed back to blue as requested
+  --q-label-color: #1a5cec; 
+  
+  // Button colors
+  --q-button-primary: #05961d;
+  
+  // Background colors
+  --q-background: #FFFFFF; 
+  --q-background-secondary: #F8F9FA; 
+  --q-background-tertiary: #F5F5F5; 
+  
+  // Text colors
+  --q-text-primary: #1F2937; // Dark gray for primary text
+  --q-text-secondary: #6B7280; // Medium gray for secondary text
+  --q-text-muted: #9CA3AF; // Light gray for muted text
+  
+  // Border colors
+  --q-border: #E5E7EB; 
+  --q-border-focus: #05961d; 
+  
+  // Table header styling
+  --table-header-color: #000000;
+  --table-header-weight: 600;
+  --table-header-size: 0.875rem;
+  --table-header-family: inherit;
+  --table-header-letter-spacing: 0.5px;
+  --table-header-padding: 16px 12px;
+  --table-header-border: 2px solid #1e40af;
+  --table-header-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  --table-header-hover-bg: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+}
+
+// Reusable form label class - enhanced styling
+.form-label {
+  color: #1e40af;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-label::after {
+  display: none;
+}
+
+// Enhanced filter component styling
+.application-filters .form-label {
+  color: #1e40af;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 0.75rem;
+  padding: 4px 8px;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.05) 0%, rgba(30, 64, 175, 0.02) 100%);
+  border-radius: 4px;
+}
+
+.application-filters .form-label::after {
+  display: none;
+}
+
+// Enhanced filter card styling
+.application-filters .q-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 2px solid rgba(30, 64, 175, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.08) !important;
+}
+
+.application-filters .q-card-section {
+  background: transparent !important;
+}
+
+// Enhanced filter header
+.application-filters .text-h6 {
+  color: #1e40af !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+}
+
+// Reusable table header class
+.table-header {
+  color: var(--table-header-color) !important;
+  font-weight: var(--table-header-weight) !important;
+  font-size: var(--table-header-size) !important;
+  letter-spacing: var(--table-header-letter-spacing) !important;
+  font-family: var(--table-header-family) !important;
+  background: var(--table-header-bg) !important;
+  border-bottom: var(--table-header-border) !important;
+  padding: var(--table-header-padding) !important;
+  position: relative !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  border-top: 1px solid rgba(30, 64, 175, 0.1) !important;
+  border-left: 1px solid rgba(30, 64, 175, 0.1) !important;
+  border-right: 1px solid rgba(30, 64, 175, 0.1) !important;
+}
+
+.table-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #1e40af 50%, transparent 100%);
+}
+
+.table-header:hover {
+  background: var(--table-header-hover-bg) !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-1px) !important;
+}
+
+// Improve text rendering
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #ffffff;
+}
+
+// Custom font weights
+.text-weight-light {
+  font-weight: 300 !important;
+}
+
+.text-weight-regular {
+  font-weight: 400 !important;
+}
+
+.text-weight-medium {
+  font-weight: 500 !important;
+}
+
+.text-weight-semibold {
+  font-weight: 600 !important;
+}
+
+.text-weight-bold {
+  font-weight: 700 !important;
+}
+
+// Enhanced Tab Styling
+.q-tabs {
+  // Make the indicator more prominent
+  .q-tabs__indicator {
+    height: 3px !important;
+    border-radius: 2px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  // Enhanced active tab styling
+  .q-tab--active {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    font-weight: 600 !important;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    
+    // Add a subtle glow effect
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+      border-radius: 8px 8px 0 0;
+      pointer-events: none;
+    }
+    
+    // Enhanced text styling for active tabs
+    .q-tab__label {
+      font-weight: 600 !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    // Enhanced icon styling for active tabs
+    .q-tab__icon {
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+    }
+  }
+  
+  // Hover effects for inactive tabs
+  .q-tab:not(.q-tab--active):hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.2s ease;
+  }
+}
+
+// Specific styling for navigation tabs (header tabs)
+.q-header .q-tabs {
+  .q-tab--active {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 2px;
+      background-color: var(--q-accent);
+      border-radius: 1px;
+    }
+  }
+}
+
+// Specific styling for form tabs
+.q-form .q-tabs {
+  .q-tab--active {
+    background-color: rgba(5, 150, 29, 0.1) !important;
+    color: var(--q-primary) !important;
+    
+    .q-tab__label {
+      color: var(--q-primary) !important;
+    }
+  }
+}
+
+// Table styles
+.q-table {
+  thead tr th {
+    @extend .table-header;
+  }
+  tbody tr:nth-child(odd) {
+    background-color: #FFFFFF !important;
+  }
+  
+  tbody tr:nth-child(even) {
+    background-color: #f8f9fa !important; /* Light gray */
+    color: var(--q-text-primary) !important;
+  }
+  
+  tbody tr:nth-child(odd):hover {
+    background-color: #f1f5f9 !important; /* Light blue-gray hover */
+  }
+  
+  tbody tr:nth-child(even):hover {
+    background-color: #e2e8f0 !important; /* Slightly darker blue-gray hover */
+    color: var(--q-text-primary) !important;
+  }
+  
+  // Add subtle borders between rows for even more contrast
+  tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important; /* Neutral border */
+  }
+  
+  tbody tr:hover {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important; /* Darker neutral border on hover */
+  }
+  
+  // Make table cell text more prominent
+  tbody tr td {
+    font-weight: 500 !important;
+  }
+  
+  tbody tr td:hover {
+    font-weight: 600 !important;
+  }
+}
+
+// Make text-h6 use black color instead of primary green
+.text-h4, .text-h3, .text-h2, .text-h1 {
+  color: #000000 !important;
+}
+
+// Make text-h5 use navy blue color
+.text-h5, .text-h6 {
+  color: #1e40af !important;
+}
+
+// Make input labels black instead of primary green
+.q-field__label {
+  color: #000000 !important;
+  font-weight: 600 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+// Make checkbox labels black instead of primary green
+.q-checkbox__label {
+  color: #000000 !important;
+  font-weight: 600 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+// Style custom form labels with elegant font
+.text-caption[style*="color: var(--q-label-color)"] {
+  font-family: 'Abril Fatface', 'Georgia', 'Times New Roman', serif !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+}
+
+// Style primary buttons with teal color
+.q-btn--standard.q-btn--unelevated,
+.q-btn--standard.q-btn--raised {
+  background-color: var(--q-button-primary) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.q-btn--standard.q-btn--unelevated:hover,
+.q-btn--standard.q-btn--raised:hover {
+  background-color: #059669 !important; // Darker teal on hover
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+// Style outline buttons with teal border
+.q-btn--outline {
+  border: 2px solid var(--q-button-primary) !important;
+  color: var(--q-button-primary) !important;
+  background-color: transparent !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.q-btn--outline:hover {
+  background-color: var(--q-button-primary) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+}
+
+// Make form components more compact
+.q-field--dense .q-field__control {
+  min-height: 36px !important;
+  height: 36px !important;
+}
+
+.q-field--dense .q-field__control-container {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.q-field--dense .q-field__native {
+  min-height: 36px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.q-field--dense .q-field__marginal {
+  height: 36px !important;
+}
+
+// Make checkboxes more compact
+.q-checkbox {
+  min-height: 32px !important;
+}
+
+.q-checkbox .q-checkbox__inner {
+  min-height: 32px !important;
+}
+
+// Enhanced form field styling with Toggl colors
+.q-field--outlined .q-field__control {
+  border-color: var(--q-border) !important;
+  background-color: var(--q-background) !important;
+}
+
+.q-field--outlined.q-field--focused .q-field__control {
+  border-color: var(--q-border-focus) !important;
+  box-shadow: 0 0 0 1px var(--q-border-focus) !important;
+}
+
+.q-field--outlined .q-field__control:hover {
+  border-color: var(--q-primary) !important;
+}
+
+// Make input and select text more bold
+.q-field__native {
+  font-weight: 500 !important;
+}
+
+.q-field__input {
+  font-weight: 500 !important;
+}
+
+// Make selected options in q-select more bold
+.q-item {
+  font-weight: 500 !important;
+}
+
+.q-item--active {
+  font-weight: 600 !important;
+}
+
+// Add subtle color to q-cards and panels
+.q-card {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.q-card-section {
+  background: transparent !important;
+}
+
+// Style expansion panels with subtle color
+.q-expansion-item {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%) !important;
+  border-radius: 8px !important;
+  margin-bottom: 8px !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+.q-expansion-item__content {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%) !important;
+}
+
+// Style dialog cards
+.q-dialog .q-card {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+// Mobile responsive improvements
+@media (max-width: 768px) {
+  // Make tabs more mobile-friendly
+  .q-tabs {
+    .q-tab {
+      min-width: auto !important;
+      padding: 8px 12px !important;
+      
+      .q-tab__label {
+        font-size: 0.75rem !important;
+      }
+      
+      .q-tab__icon {
+        font-size: 18px !important;
+      }
+    }
+  }
+  
+  // Make tables responsive with horizontal scroll
+  .q-table {
+    overflow-x: auto !important;
+    
+    .q-table__container {
+      min-width: 600px !important; // Ensure minimum width for content
+    }
+    
+    thead tr th {
+      padding: 8px 6px !important;
+      font-size: 0.75rem !important;
+      white-space: nowrap !important;
+    }
+    
+    tbody tr td {
+      padding: 8px 6px !important;
+      font-size: 0.875rem !important;
+      white-space: nowrap !important;
+    }
+  }
+  
+  // Improve form responsiveness
+  .q-form {
+    .row {
+      margin: 0 !important;
+    }
+    
+    .col-12 {
+      padding: 0 8px !important;
+    }
+  }
+  
+  // Make cards more mobile-friendly
+  .q-card {
+    margin: 8px !important;
+    
+    .q-card-section {
+      padding: 12px !important;
+    }
+  }
+  
+  // Improve dialog responsiveness
+  .q-dialog {
+    .q-card {
+      margin: 16px !important;
+      max-width: calc(100vw - 32px) !important;
+      min-width: auto !important;
+    }
+  }
+  
+  // Make buttons more touch-friendly
+  .q-btn {
+    min-height: 44px !important; // Touch target size
+    
+    &.q-btn--round {
+      min-width: 44px !important;
+      min-height: 44px !important;
+    }
+  }
+  
+  // Improve text sizing for mobile
+  .text-h5, .text-h6 {
+    font-size: 1.25rem !important;
+  }
+  
+  // Make form labels more readable on mobile
+  .text-caption[style*="color: var(--q-primary)"] {
+    font-size: 0.8rem !important;
+    letter-spacing: 0.3px !important;
+  }
+}
+
+// Extra small screens
+@media (max-width: 480px) {
+  .q-table {
+    .q-table__container {
+      min-width: 500px !important;
+    }
+    
+    thead tr th {
+      padding: 6px 4px !important;
+      font-size: 0.7rem !important;
+    }
+    
+    tbody tr td {
+      padding: 6px 4px !important;
+      font-size: 0.8rem !important;
+    }
+  }
+  
+  .q-tabs {
+    .q-tab {
+      padding: 6px 8px !important;
+      
+      .q-tab__label {
+        font-size: 0.7rem !important;
+      }
+      
+      .q-tab__icon {
+        font-size: 16px !important;
+      }
+    }
+  }
+}
+
+// Toggl-inspired header styling
+.q-header {
+  background: #1e40af !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  color: white !important;
+}
+
+.q-toolbar {
+  min-height: 64px !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+// Header brand styling
+.header-brand {
+  display: flex !important;
+  align-items: center !important;
+
+}
+
+.header-title {
+  font-size: 1.5rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  position: relative !important;
+}
+
+.header-title::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -4px !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 2px !important;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.6) 50%, transparent 100%) !important;
+  border-radius: 1px !important;
+}
+
+// Desktop navigation
+.desktop-nav {
+  display: flex !important;
+  align-items: center !important;
+  margin-left: 0 !important;
+  margin-right: 32px !important;
+  position: sticky !important;
+  left: 280px !important;
+  z-index: 1000 !important;
+}
+
+.desktop-nav .q-btn {
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 6px !important;
+  margin: 0 2px !important;
+  padding: 8px 16px !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  white-space: nowrap !important;
+}
+
+.desktop-nav .q-btn:not(:last-child)::after {
+  content: '|' !important;
+  position: absolute !important;
+  right: -8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-weight: 400 !important;
+  font-size: 1.1rem !important;
+}
+
+.desktop-nav .q-btn:hover {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.desktop-nav .q-btn.text-primary {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+// Logout button styling
+.q-btn[icon="logout"] {
+  position: sticky !important;
+  right: 80px !important;
+  z-index: 1001 !important;
+  margin-left: 16px !important;
+}
+
+// Mobile menu button
+.mobile-menu-btn {
+  display: none !important;
+  color: white !important;
+}
+
+// Mobile navigation
+.mobile-nav {
+  background: #ffffff !important;
+  border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  color: #000000 !important;
+}
+
+.mobile-nav .q-item {
+  color: #000000 !important;
+  border-radius: 8px !important;
+  margin: 4px 8px !important;
+  padding: 12px 16px !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+}
+
+.mobile-nav .q-item:not(:last-child)::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -2px !important;
+  left: 16px !important;
+  right: 16px !important;
+  height: 1px !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+.mobile-nav .q-item:hover {
+  color: #000000 !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.mobile-nav .q-item.text-primary {
+  color: #000000 !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+// Responsive header
+@media (max-width: 900px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+  
+  .header-brand {
+    min-width: auto !important;
+    padding-right: 16px !important;
+  }
+  
+  .header-title {
+    font-size: 1.25rem !important;
+  }
+  
+  .q-toolbar-title {
+    font-size: 1.25rem !important;
+  }
+}
+
+// Make expansion item headers black instead of primary green
+.q-expansion-item__title {
+  color: #000000 !important;
+  font-weight: 600;
+}
+
+// Override text-primary class for expansion items in forms
+.q-expansion-item .text-primary {
+  color: #000000 !important;
+}
+
+// Make action buttons (edit icons) black instead of primary green
+.q-btn[icon="edit"] {
+  color: #000000 !important;
+}
+
+.q-btn[icon="edit"]:hover {
+  color: #374151 !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+}

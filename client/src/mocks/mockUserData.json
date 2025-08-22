@@ -1,0 +1,15 @@
+{
+  "userId": "auth0|6844d51eecdb753254ed6d53",
+  "firstName": "Teial",
+  "lastName": "Dickens",
+  "emailAddress": "teial.dickens@gmail.com",
+  "phoneNumber": "1234567890",
+  "profile": {
+    "preferences": {
+      "academicLevel": "College Freshman",
+      "targetType":"Both",
+      "subjectAreas": ["STEM", "Computer Science"],
+      "minAmount": 1000
+    }
+  }
+} 
