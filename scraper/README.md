@@ -77,17 +77,19 @@ This is the scraper component of the Scholarship Tracker system, featuring Pytho
 
 ```
 scraper/
-├── src/                    # Infrastructure and utilities
-│   ├── utils/             # Shared utilities
+├── src/                    # Source code
+│   ├── scrapers/          # Python scraper implementations
+│   ├── utils_python/      # Python utilities and types
+│   ├── utils/             # TypeScript utilities
 │   ├── batch/             # AWS Batch job definitions
 │   ├── lambda/            # Lambda functions
-│   └── utils/             # Shared utilities
+│   └── cdk/               # CDK infrastructure code
 ├── cdk/                   # AWS CDK infrastructure code
 ├── scripts/               # Setup and utility scripts
 │   ├── python/           # Python development scripts
 │   └── aws/              # AWS deployment scripts
 ├── docs/                  # Documentation
-├── *.py                   # Python scraper implementations
+├── main.py                # Main entry point
 ├── package.json           # Node.js dependencies
 ├── requirements.txt       # Python dependencies
 └── README.md             # This file
