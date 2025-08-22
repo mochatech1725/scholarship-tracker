@@ -1,18 +1,15 @@
 # Scholarship Tracker - Scraper Component
 
-This is the scraper component of the Scholarship Tracker system, featuring a hybrid Python/TypeScript architecture for both development and production environments.
+This is the scraper component of the Scholarship Tracker system, featuring Python-based scrapers for both development and production environments.
 
 ## 🏗️ Architecture Overview
 
-### Hybrid Scraper Design
-- **Python Scrapers**: For local development and testing
-- **TypeScript Scrapers**: For production deployment with AWS Bedrock AI
-- **Dynamic Switching**: Database-driven scraper type selection
+### Scraper Design
+- **Python Scrapers**: For local development, testing, and production
 - **Environment Support**: Local, dev, staging, production
 
 ### Components
-- **Python Scrapers**: BeautifulSoup-based scrapers for local development
-- **TypeScript Scrapers**: AWS Bedrock-powered scrapers for production
+- **Python Scrapers**: BeautifulSoup-based scrapers for development and production
 - **AWS Infrastructure**: CDK-based infrastructure as code
 - **Database**: MySQL for both development and production
 
@@ -80,8 +77,8 @@ This is the scraper component of the Scholarship Tracker system, featuring a hyb
 
 ```
 scraper/
-├── src/                    # TypeScript scrapers and infrastructure
-│   ├── scrapers/          # TypeScript scraper implementations
+├── src/                    # Infrastructure and utilities
+│   ├── utils/             # Shared utilities
 │   ├── batch/             # AWS Batch job definitions
 │   ├── lambda/            # Lambda functions
 │   └── utils/             # Shared utilities
@@ -98,23 +95,20 @@ scraper/
 
 ## 🔧 Available Scrapers
 
-### Python Scrapers (Local Development)
-- `careeronestop_python` - CareerOneStop.org scraper
-- `collegescholarship_python` - CollegeScholarships.org scraper
+### Python Scrapers
+- `careeronestop` - CareerOneStop.org scraper
+- `collegescholarship` - CollegeScholarships.org scraper
 - `general` - General web scraper
 - `rss` - RSS/API feed scraper
 
-### TypeScript Scrapers (Production)
-- `careeronestop` - CareerOneStop.org with AWS Bedrock
-- `collegescholarship` - CollegeScholarships.org with AWS Bedrock
-- `general_search` - AI-powered general search with Bedrock
+
 
 ## 🌍 Environment Switching
 
-The system supports multiple environments with automatic scraper type selection:
+The system supports multiple environments:
 
 ```bash
-# Local development (Python scrapers)
+# Local development
 python main.py --scraper careerone --environment local
 
 # Development environment
@@ -192,7 +186,7 @@ python main.py --scraper careerone --environment prod
 ## 🤝 Contributing
 
 1. **Local Development**: Use Python scrapers for testing
-2. **Production Changes**: Update TypeScript scrapers
+2. **Production Changes**: Update Python scrapers
 3. **Infrastructure**: Modify CDK code for AWS changes
 4. **Database**: Update schema in setup scripts
 

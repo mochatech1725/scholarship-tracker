@@ -19,9 +19,7 @@ export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || '';
 
 // API Configuration
 
-// Bedrock Configuration
-export const AWS_BEDROCK_MODEL_ID = process.env.AWS_BEDROCK_MODEL_ID || 'anthropic.claude-3-sonnet-20240229-v1:0';
-export const AWS_BEDROCK_VERSION = process.env.AWS_BEDROCK_VERSION || 'bedrock-2023-05-31';
+
 
 // Scraping Configuration
 export const MAX_SCHOLARSHIP_SEARCH_RESULTS = parseInt(process.env.MAX_SCHOLARSHIP_SEARCH_RESULTS || '50', 10);

@@ -24,14 +24,6 @@
         "batch:ListJobs"
       ],
       "Resource": "*"
-    },
-    "bedrockAccess": {
-      "Effect": "Allow",
-      "Action": [
-        "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
-      ],
-      "Resource": "*"
     }
   },
   "batchPolicies": {
@@ -50,14 +42,6 @@
         "arn:aws:dynamodb:*:*:table/scholarship-jobs-*",
         "arn:aws:dynamodb:*:*:table/scholarship-websites-*"
       ]
-    },
-    "bedrockAccess": {
-      "Effect": "Allow",
-      "Action": [
-        "bedrock:InvokeModel",
-        "bedrock:InvokeModelWithResponseStream"
-      ],
-      "Resource": "*"
     },
     "logsAccess": {
       "Effect": "Allow",

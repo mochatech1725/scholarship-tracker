@@ -48,7 +48,7 @@
   "dependencies": {
     "@aws-cdk/aws-lambda-nodejs": "^1.203.0",
     "@aws-sdk/client-batch": "^3.0.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.0.0",
+
     "@aws-sdk/client-cloudwatch-logs": "^3.849.0",
     "@aws-sdk/client-dynamodb": "^3.0.0",
     "@aws-sdk/client-ec2": "^3.854.0",

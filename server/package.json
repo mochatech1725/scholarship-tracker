@@ -12,7 +12,7 @@
     "token": "node scripts/get-auth0-token.js"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.840.0",
+
     "@aws-sdk/client-comprehend": "^3.840.0",
     "@aws-sdk/client-dynamodb": "^3.840.0",
     "@aws-sdk/client-secrets-manager": "^3.848.0",
