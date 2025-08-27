@@ -9,7 +9,7 @@ import recommenderRoutes from './routes/recommender.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import scholarshipSearchRoutes from './routes/scholarship.search.routes.js';
 import authenticateUser from './middleware/auth.middleware.js';
-import { initKnex } from './config/knex.config.js';
+import { initKnex } from './config/database.config.js';
 import { initScholarshipSearchController } from './controllers/scholarship.search.controller.js';
 import auth0Config from './config/auth0.config.js';
 import { PORT } from './utils/constants.js';
@@ -28,10 +28,10 @@ const corsOptions = {
   origin: ['http://localhost:9000', 'http://127.0.0.1:9000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With', 
-    'Cache-Control', 
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Cache-Control',
     'Pragma',
     'Expires',
     'If-Modified-Since',
@@ -50,14 +50,14 @@ app.use(express.urlencoded({ extended: true }));
 // Global error handler to ensure JSON responses
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Error occurred:', err);
-  
+
   // Don't send error details in production
   const errorResponse = {
     message: 'Something went wrong!',
     error: auth0Config.debug ? err.message : 'Internal server error',
     timestamp: new Date().toISOString()
   };
-  
+
   res.status(500).json(errorResponse);
 });
 
@@ -70,10 +70,10 @@ app.use('/api/scholarships', authenticateUser, scholarshipSearchRoutes);
 
 // Health check route
 app.get('/health', (req: Request, res: Response) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: auth0Config.env 
+    environment: auth0Config.env
   });
 });
 
@@ -84,7 +84,7 @@ app.get('/', (req: Request, res: Response) => {
 
 // 404 handler - ensure JSON response
 app.use((req: Request, res: Response) => {
-  res.json({ 
+  res.json({
     message: 'Route not found',
     path: req.path,
     method: req.method,
@@ -104,13 +104,12 @@ app.use((req: Request, res: Response) => {
 // Start server function
 const startServer = async () => {
   try {
-    // Initialize Knex with AWS Secrets Manager
-    const secretArn = process.env.AWS_SECRET_ARN || '';
-    await initKnex(secretArn);
-    
+    // Initialize Knex with local database configuration
+    await initKnex();
+
     // Initialize scholarship search controller
-    await initScholarshipSearchController(secretArn);
-    
+    await initScholarshipSearchController();
+
     // Start server
     app.listen(port, () => {
       console.log(`Server is running on port ${port}`);

@@ -1,5 +1,4 @@
 import knex, { Knex } from 'knex';
-import { getSecret } from './secrets.config.js';
 import {
   KNEX_MYSQL_POOL_MIN,
   KNEX_MYSQL_POOL_MAX,
@@ -13,26 +12,26 @@ import {
 
 let knexInstance: Knex | null = null;
 
-export async function initKnex(secretArn: string): Promise<Knex> {
+export async function initKnex(): Promise<Knex> {
   if (knexInstance) {
     return knexInstance;
   }
 
   try {
-    const secret = await getSecret(secretArn);
-    
+    // Use environment variables for local database connection
+    const dbConfig = {
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'scholarship_tracker',
+      port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 3306,
+    };
+
     knexInstance = knex({
       client: 'mysql2',
-      connection: {
-        host: process.env.DB_HOST || secret.host, // Use local tunnel if set
-        user: secret.username,
-        password: secret.password,
-        database: secret.dbname,
-        port: process.env.DB_PORT ? Number(process.env.DB_PORT) : (secret.port ? Number(secret.port) : 3306), // Use local tunnel port if set
-        ssl: secret.ssl || undefined,
-      },
-      pool: { 
-        min: KNEX_MYSQL_POOL_MIN, 
+      connection: dbConfig,
+      pool: {
+        min: KNEX_MYSQL_POOL_MIN,
         max: KNEX_MYSQL_POOL_MAX,
         acquireTimeoutMillis: KNEX_MYSQL_POOL_ACQUIRE_TIMEOUT,
         createTimeoutMillis: KNEX_MYSQL_POOL_CREATE_TIMEOUT,
@@ -46,7 +45,8 @@ export async function initKnex(secretArn: string): Promise<Knex> {
     // Test the connection
     await knexInstance.raw('SELECT 1');
     console.log('✅ Knex MySQL connection established successfully');
-    
+    console.log(`📊 Connected to database: ${dbConfig.database} on ${dbConfig.host}:${dbConfig.port}`);
+
     return knexInstance;
   } catch (error) {
     console.error('❌ Failed to initialize Knex:', error);
@@ -61,4 +61,4 @@ export function getKnex(): Knex {
   return knexInstance;
 }
 
-export default knexInstance; 
+export default knexInstance;

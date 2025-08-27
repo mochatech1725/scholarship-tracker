@@ -8,8 +8,12 @@ export const NODE_ENV = process.env.NODE_ENV || 'development';
 export const PORT = parseInt(process.env.PORT || '3000', 10);
 export const APP_DEBUG = process.env.APP_DEBUG === 'true';
 
-// MongoDB Configuration
-export const MONGODB_URI = process.env.MONGODB_URI || '';
+// MySQL Database Configuration
+export const DB_HOST = process.env.DB_HOST || 'localhost';
+export const DB_PORT = parseInt(process.env.DB_PORT || '3306', 10);
+export const DB_USER = process.env.DB_USER || 'root';
+export const DB_PASSWORD = process.env.DB_PASSWORD || '';
+export const DB_NAME = process.env.DB_NAME || 'scholarship_tracker';
 
 // Auth0 Configuration
 export const AUTH0_ISSUER_BASE_URL = process.env.AUTH0_ISSUER_BASE_URL || '';
@@ -19,12 +23,7 @@ export const AUTH0_CLIENT_SECRET = process.env.AUTH0_CLIENT_SECRET || '';
 
 // App Configuration
 export const APP_SECRET = process.env.APP_SECRET || '';
-export const MAX_SCHOLARSHIP_SEARCH_RESULTS = parseInt(process.env.MAX_SCHOLARSHIP_SEARCH_RESULTS || '25', 10);
-
-// AWS Configuration
-export const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
-export const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || '';
-export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || '';
+export const MAX_SCHOLARSHIP_SEARCH_RESULTS = parseInt(process.env.MAX_SCHOLARSHIP_SEARCH_RESULTS || '100', 10);
 
 // Knex MySQL Pool Configuration
 export const KNEX_MYSQL_POOL_MIN = parseInt(process.env.KNEX_MYSQL_POOL_MIN || '0', 10);

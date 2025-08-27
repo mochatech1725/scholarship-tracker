@@ -1,14 +1,13 @@
 import { Request, Response } from 'express';
 import ScholarshipSearchService from '../services/scholarship-search.service.js';
-import { SearchService, initKnexFromAWSSecret } from '../services/aws.db.service.js';
+import { SearchService } from '../services/database.service.js';
 import { Scholarship } from '../shared-types/scholarship.types.js';
 import { MAX_SCHOLARSHIP_SEARCH_RESULTS, NODE_ENV } from '../utils/constants.js';
 
 let searchService: ScholarshipSearchService;
 
-export async function initScholarshipSearchController(secretArn: string) {
-  const knex = await initKnexFromAWSSecret(secretArn);
-  const searchDbService = new SearchService(knex);
+export async function initScholarshipSearchController() {
+  const searchDbService = new SearchService();
   searchService = new ScholarshipSearchService(searchDbService);
 }
 
@@ -48,7 +47,7 @@ export const getScholarshipSources = async (req: Request, res: Response) => {
 
 export const findScholarships = async (req: Request, res: Response) => {
   try {
-    const { searchCriteria, maxResults = MAX_SCHOLARSHIP_SEARCH_RESULTS} = req.body;
+    const { searchCriteria, maxResults = MAX_SCHOLARSHIP_SEARCH_RESULTS } = req.body;
     if (!searchCriteria || typeof searchCriteria !== 'object') {
       return res.status(400).json({
         message: 'Search criteria object is required',

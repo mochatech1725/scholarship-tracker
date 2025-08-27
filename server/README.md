@@ -1,6 +1,6 @@
 # Scholarship Server
 
-A comprehensive scholarship management server built with Express.js, TypeScript, and AWS RDS MySQL, featuring Auth0 integration and advanced scholarship search capabilities.
+A comprehensive scholarship management server built with Express.js, TypeScript, and MySQL, featuring Auth0 integration and advanced scholarship search capabilities.
 
 ---
 
@@ -12,38 +12,44 @@ A comprehensive scholarship management server built with Express.js, TypeScript,
 - **Scholarship Search (via External Scraper Service)**: This server connects to a MySQL database populated by a separate service called `scholarship-scraper`, which searches for scholarships (using AI and scraping) and stores them in the database. This server uses Knex to query and serve those results.
 - **RESTful API**: Clean, well-documented API endpoints
 - **TypeScript**: Full type safety and better development experience
-- **AWS RDS MySQL**: Scalable relational database for scholarships (via Knex)
-- **AWS Secrets Manager**: Securely manages database credentials
+- **MySQL**: Local relational database for scholarships (via Knex)
 - **Security**: Helmet, CORS
 
 ---
 
-## AWS Integration
+## Local Development
 
 This project uses:
 
-- **AWS RDS (MySQL)**: For storing all application and scholarship data
-- **AWS Secrets Manager**: For securely managing database credentials
+- **MySQL**: Local database for storing all application and scholarship data
+- **Environment Variables**: For managing database credentials
 
-> **Note:** This server does NOT use AWS Bedrock, Comprehend, or DynamoDB. Scholarship data is provided by the external `scholarship-scraper` service.
+> **Note:** This server connects to a local MySQL database. Scholarship data is provided by the external `scholarship-scraper` service.
 
 ### Environment Variables
 
 Add the following to your `.env` file:
 
 ```bash
-# AWS RDS/Secrets Configuration
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-aws-access-key-id
-AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
-# The secret should contain host, username, password, dbname, and optionally port/ssl
+# MySQL Database Configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your-mysql-password
+DB_NAME=scholarship_tracker
 ```
 
 ---
 
-## How to Run Locally (with AWS RDS MySQL)
+## How to Run Locally
 
-### 1. Clone and Install
+### 1. Prerequisites
+
+- Node.js (v18 or higher)
+- MySQL (v8.0 or higher)
+- npm or yarn
+
+### 2. Clone and Install
 
 ```bash
 git clone <repository-url>
@@ -52,39 +58,31 @@ npm install
 cp env.example .env
 ```
 
-### 2. Configure Environment
+### 3. Set Up Local Database
 
-Edit `.env` with your Auth0, AWS, and other credentials as needed.
-
-### 3. Connect to AWS RDS MySQL via SSH Bastion Tunnel (Recommended)
-
-For security, direct access to AWS RDS is not allowed. Use SSH tunneling through a bastion host:
-
-#### **Recommended: Use Provided Script**
+Run the database setup script:
 
 ```bash
-bash scripts/start-bastion.sh
+bash scripts/setup-local-db.sh
 ```
 
-This will open a tunnel from your local port 3307 to the remote RDS MySQL instance via the bastion host. The script uses:
+This script will:
+- Check if MySQL is running
+- Create the database if it doesn't exist
+- Set up the required schema
 
-```
-ssh -i ~/.ssh/bastion-key.pem -L 3307:<rds-endpoint>:3306 ec2-user@<bastion-ip>
-```
+### 4. Configure Environment
 
-- Replace `~/.ssh/bastion-key.pem` with your SSH key path if needed.
-- Keep this terminal open while developing locally.
+Edit `.env` with your database credentials and Auth0 configuration.
 
-#### **Configure Your Local .env**
+### 5. Build and Run
 
-Set your MySQL connection to use `localhost:3307` (the tunnel):
-
-```
-DB_HOST=127.0.0.1
-DB_PORT=3307
+```bash
+npm run build
+npm run dev
 ```
 
-> **Note:** All database traffic will be securely tunneled through the bastion host.
+The server will start on port 3000 by default.
 
 
 ## API Endpoints

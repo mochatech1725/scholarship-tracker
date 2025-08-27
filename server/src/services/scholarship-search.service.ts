@@ -1,4 +1,4 @@
-import { SearchService } from './aws.db.service.js';
+import { SearchService } from './database.service.js';
 import { Scholarship } from '../shared-types/scholarship.types.js';
 import { SearchCriteria, SearchOptions } from '../shared-types/scholarship-search.types.js';
 
@@ -17,7 +17,7 @@ export class ScholarshipSearchService {
    * Search scholarships with advanced filtering and ranking
    */
   async searchScholarships(
-    criteria: SearchCriteria, 
+    criteria: SearchCriteria,
     options: SearchOptions = {}
   ): Promise<{
     scholarships: Scholarship[];
@@ -71,8 +71,8 @@ export class ScholarshipSearchService {
    * Apply minimal post-processing filters (most filtering now done at DB level)
    */
   private applyFilters(
-    scholarships: Scholarship[], 
-    criteria: SearchCriteria, 
+    scholarships: Scholarship[],
+    criteria: SearchCriteria,
     options: SearchOptions
   ): Scholarship[] {
     return scholarships.filter(scholarship => {
@@ -90,13 +90,13 @@ export class ScholarshipSearchService {
    * Sort scholarships by specified criteria
    */
   private sortScholarships(
-    scholarships: ScoredScholarship[], 
-    sortBy: string, 
+    scholarships: ScoredScholarship[],
+    sortBy: string,
     sortOrder: string
   ): ScoredScholarship[] {
     return scholarships.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortBy) {
         case 'deadline':
           comparison = this.compareDates(a.deadline, b.deadline);
@@ -112,7 +112,7 @@ export class ScholarshipSearchService {
           comparison = (b.relevanceScore || 0) - (a.relevanceScore || 0);
           break;
       }
-      
+
       return sortOrder === 'asc' ? comparison : -comparison;
     });
   }
@@ -124,7 +124,7 @@ export class ScholarshipSearchService {
     if (!dateA && !dateB) return 0;
     if (!dateA) return 1;
     if (!dateB) return -1;
-    
+
     const a = new Date(dateA);
     const b = new Date(dateB);
     return a.getTime() - b.getTime();
@@ -137,7 +137,7 @@ export class ScholarshipSearchService {
     if (!amountA && !amountB) return 0;
     if (!amountA) return 1;
     if (!amountB) return -1;
-    
+
     return amountA - amountB;
   }
 
@@ -146,41 +146,41 @@ export class ScholarshipSearchService {
    */
   private calculateRelevanceScore(scholarship: Scholarship, criteria: SearchCriteria): number {
     let score = 0;
-    
+
     // Build search text and terms for scoring
     const searchText = this.buildSearchTextForScoring(scholarship);
     const searchTerms = this.buildSearchTermsForScoring(criteria);
-    
+
     // Calculate matches for comprehensive text search
     if (searchTerms.length > 0) {
-      const matchedTerms = searchTerms.filter((term: string) => 
+      const matchedTerms = searchTerms.filter((term: string) =>
         searchText.toLowerCase().includes(term.toLowerCase())
       );
-      
+
       // Base score for having any matches
       if (matchedTerms.length > 0) {
         score += 10;
-        
+
         // Bonus for matching more terms
         const matchRatio = matchedTerms.length / searchTerms.length;
         score += Math.round(matchRatio * 20);
-        
+
         // Bonus for exact matches in title
         const title = (scholarship.title || '').toLowerCase();
-        const titleMatches = searchTerms.filter((term: string) => 
+        const titleMatches = searchTerms.filter((term: string) =>
           title.includes(term.toLowerCase())
         );
         score += titleMatches.length * 5;
       }
     }
-    
+
     // Legacy scoring for backward compatibility
     // Keyword matching in title and description
     if (criteria.keywords) {
       const keywords = criteria.keywords.toLowerCase().split(' ');
       const title = (scholarship.title || '').toLowerCase();
       const description = (scholarship.description || '').toLowerCase();
-      
+
       keywords.forEach(keyword => {
         if (title.includes(keyword)) score += 10;
         if (description.includes(keyword)) score += 5;
@@ -221,12 +221,12 @@ export class ScholarshipSearchService {
    */
   private buildSearchTextForScoring(scholarship: Scholarship): string {
     const textParts: string[] = [];
-    
+
     if (scholarship.eligibility) textParts.push(scholarship.eligibility);
     if (scholarship.description) textParts.push(scholarship.description);
     if (scholarship.title) textParts.push(scholarship.title);
     if (scholarship.organization) textParts.push(scholarship.organization);
-    
+
     return textParts.join(' ');
   }
 
@@ -235,27 +235,27 @@ export class ScholarshipSearchService {
    */
   private buildSearchTermsForScoring(criteria: SearchCriteria): string[] {
     const terms: string[] = [];
-    
+
     // Add subject areas
     if (criteria.subjectAreas && criteria.subjectAreas.length > 0) {
       terms.push(...criteria.subjectAreas);
     }
-    
+
     // Add target type (if not 'Both')
     if (criteria.target_type && criteria.target_type !== 'Both') {
       terms.push(criteria.target_type);
     }
-    
+
     // Add ethnicity
     if (criteria.ethnicity) {
       terms.push(criteria.ethnicity);
     }
-    
+
     // Add gender
     if (criteria.gender) {
       terms.push(criteria.gender);
     }
-    
+
     // Add keywords (split into individual words)
     if (criteria.keywords) {
       const keywordTerms = criteria.keywords
@@ -263,7 +263,7 @@ export class ScholarshipSearchService {
         .filter(word => word.length > 0);
       terms.push(...keywordTerms);
     }
-    
+
     return terms;
   }
 
@@ -272,7 +272,7 @@ export class ScholarshipSearchService {
    */
   private getAppliedFilters(criteria: SearchCriteria): string[] {
     const filters: string[] = [];
-    
+
     if (criteria.keywords) filters.push(`Keywords: ${criteria.keywords}`);
     if (criteria.academic_level) filters.push(`Academic Level: ${criteria.academic_level}`);
     if (criteria.subjectAreas?.length) filters.push(`Subjects: ${criteria.subjectAreas.join(', ')}`);
@@ -280,7 +280,7 @@ export class ScholarshipSearchService {
     if (criteria.gender) filters.push(`Gender: ${criteria.gender}`);
     if (criteria.ethnicity) filters.push(`Ethnicity: ${criteria.ethnicity}`);
     if (criteria.geographic_restrictions) filters.push(`Location: ${criteria.geographic_restrictions}`);
-    
+
     return filters;
   }
 
@@ -289,22 +289,22 @@ export class ScholarshipSearchService {
    */
   private getAvailableFilters(scholarships: Scholarship[]): string[] {
     const filters: string[] = [];
-    
+
     // Collect unique values for each filter type
     const academicLevels = new Set<string>();
     const countries = new Set<string>();
     const organizations = new Set<string>();
-    
+
     scholarships.forEach(scholarship => {
       if (scholarship.academic_level) academicLevels.add(scholarship.academic_level);
       if (scholarship.country) countries.add(scholarship.country);
       if (scholarship.organization) organizations.add(scholarship.organization);
     });
-    
+
     if (academicLevels.size > 0) filters.push(`Academic Levels: ${Array.from(academicLevels).join(', ')}`);
     if (countries.size > 0) filters.push(`Countries: ${Array.from(countries).join(', ')}`);
     if (organizations.size > 0) filters.push(`Organizations: ${Array.from(organizations).join(', ')}`);
-    
+
     return filters;
   }
 
@@ -315,7 +315,7 @@ export class ScholarshipSearchService {
     try {
       const item = await this.searchService.getScholarshipById(id);
       if (!item) return null;
-      
+
       return item;
     } catch (error) {
       console.error('Error getting scholarship by ID:', error);

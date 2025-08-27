@@ -6,7 +6,7 @@ import {
 
 const router = express.Router();
 
-// Main scholarship search endpoint (with AWS fallback)
+// Main scholarship search endpoint
 router.post('/find', findScholarships);
 
 // Get available scholarship sources

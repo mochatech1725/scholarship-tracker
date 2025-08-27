@@ -1,35 +1,13 @@
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import knex, { Knex } from 'knex';
 import { SearchCriteria } from '../shared-types/scholarship-search.types.js';
 import { Scholarship } from '../shared-types/scholarship.types.js';
-
-// Helper to fetch DB credentials from AWS Secrets Manager and initialize Knex
-export async function initKnexFromAWSSecret(secretArn: string): Promise<Knex> {
-  const client = new SecretsManagerClient({ region: 'us-east-1' });
-  const command = new GetSecretValueCommand({ SecretId: secretArn });
-  const response = await client.send(command);
-  if (!response.SecretString) throw new Error('No secret string found');
-  const secret = JSON.parse(response.SecretString);
-  // secret should have host, username, password, dbname, port
-  return knex({
-    client: 'mysql2',
-    connection: {
-      host: secret.host,
-      user: secret.username,
-      password: secret.password,
-      database: secret.dbname,
-      port: secret.port ? Number(secret.port) : 3306,
-      ssl: secret.ssl || undefined,
-    },
-    pool: { min: 0, max: 10 },
-  });
-}
+import { getKnex } from '../config/database.config.js';
 
 export class SearchService {
   private db: Knex;
 
-  constructor(dbConnection: Knex) {
-    this.db = dbConnection;
+  constructor() {
+    this.db = getKnex();
   }
 
   async searchScholarships(criteria: SearchCriteria): Promise<Scholarship[]> {
@@ -84,4 +62,4 @@ export class SearchService {
   }
 }
 
-export default SearchService; 
+export default SearchService;
