@@ -34,9 +34,9 @@ The scraper uses a clean database abstraction with the Factory pattern:
 - Uses environment variables: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`
 - Logs job status updates locally
 
-#### **ProductionDatabaseManager** (AWS RDS)
-- Connects to AWS RDS MySQL database
-- Uses environment variables: `RDS_MYSQL_HOST`, `RDS_MYSQL_PORT`, `RDS_MYSQL_USER`, `RDS_MYSQL_PASSWORD`, `RDS_MYSQL_DATABASE`
+#### **ProductionDatabaseManager** (Production)
+- Connects to production MySQL database
+- Uses environment variables: `PROD_MYSQL_HOST`, `PROD_MYSQL_PORT`, `PROD_MYSQL_USER`, `PROD_MYSQL_PASSWORD`, `PROD_MYSQL_DATABASE`
 - Designed for production job status tracking
 
 #### **DatabaseManagerFactory**
@@ -60,7 +60,7 @@ The scraper uses a clean database abstraction with the Factory pattern:
   - Respects `robots.txt` directives
   - Implements crawl delays and rate limiting
   - Extracts URLs from sitemaps
-  - Follows AWS web crawling best practices
+  - Follows web crawling best practices
   - Extracts basic scholarship data during crawling
 
 #### 3. Content Extraction Pipeline (`content_extraction_pipeline.py`)
@@ -165,3 +165,236 @@ python3 main.py --scraper general
 ### 3. **Website-Specific Scrapers** (Targeted)
 
 **Files:** `careeronestop_scraper.py`, `collegescholarship_scraper.py`
+
+**Approach:**
+- Targeted scraping of specific scholarship websites
+- Uses efficient broad search approach
+- Searches with single broad term: `'scholarship'`
+- Much faster than the old keyword-by-keyword approach
+
+**Usage:**
+```bash
+python3 main.py --scraper careeronestop_python
+python3 main.py --scraper collegescholarship_python
+```
+
+### Performance Comparison
+
+| Approach | Speed | Reliability | Data Quality | Discovery | Maintenance |
+|----------|-------|-------------|--------------|-----------|-------------|
+| AI Discovery | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| General | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
+| Website-Specific | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
+
+### Recommended Strategy
+
+#### For Production:
+```bash
+# Weekly: Get comprehensive data with general scraper
+python3 main.py --scraper general
+
+# Monthly: Discover new sources with AI
+python3 main.py --scraper ai_discovery
+
+# Monthly: Get specific niche scholarships
+python3 main.py --scraper careeronestop_python
+python3 main.py --scraper collegescholarship_python
+```
+
+#### For Development/Testing:
+```bash
+# Quick test with general scraper
+python3 main.py --scraper general
+
+# Test AI discovery
+python3 main.py --scraper ai_discovery
+```
+
+## Setup and Configuration
+
+### 1. Environment Setup
+
+#### Virtual Environment
+```bash
+# Navigate to scraper directory
+cd scraper
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### Environment Variables
+Create a `.env` file in the parent directory (`/Users/teial/Tutorials/scholarship-tracker/.env`) with:
+
+```bash
+# Database Configuration
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_DATABASE=scholarships
+
+# Production MySQL (for production)
+PROD_MYSQL_HOST=your-production-mysql-host
+PROD_MYSQL_PORT=3306
+PROD_MYSQL_USER=your_username
+PROD_MYSQL_PASSWORD=your_password
+PROD_MYSQL_DATABASE=scholarships
+
+# AI Discovery Scraper (Required)
+OPENAI_API_KEY=your_openai_api_key_here
+GOOGLE_API_KEY=your_google_api_key_here
+GOOGLE_CUSTOM_SEARCH_CX=your_custom_search_engine_id_here
+```
+
+### 2. API Setup
+
+#### OpenAI API
+1. Go to [OpenAI Platform](https://platform.openai.com/)
+2. Create an account and get your API key
+3. Add to `.env`: `OPENAI_API_KEY=your_key_here`
+
+#### Google Custom Search API
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable the "Custom Search API"
+4. Create credentials (API Key)
+5. Add to `.env`: `GOOGLE_API_KEY=your_key_here`
+
+#### Google Custom Search Engine
+1. Go to [Google Programmable Search Engine](https://programmablesearchengine.google.com/)
+2. Create a new search engine
+3. Get your Search Engine ID
+4. Add to `.env`: `GOOGLE_CUSTOM_SEARCH_CX=your_engine_id_here`
+
+### 3. Database Setup
+
+#### Local MySQL
+```bash
+# Install MySQL if not already installed
+brew install mysql  # macOS
+sudo apt-get install mysql-server  # Ubuntu
+
+# Start MySQL
+brew services start mysql  # macOS
+sudo systemctl start mysql  # Ubuntu
+
+# Create database
+mysql -u root -p
+CREATE DATABASE scholarships;
+```
+
+#### Production MySQL (Optional)
+1. Set up a production MySQL database
+2. Note the host, username, and password
+3. Add to `.env` file
+
+## Usage
+
+### Basic Usage
+```bash
+# List available scrapers
+python3 main.py --help
+
+# Run a specific scraper
+python3 main.py --scraper ai_discovery
+python3 main.py --scraper general
+```
+
+### Environment Switching
+```bash
+# Local mode (default)
+python3 main.py --scraper general --environment local
+
+# Production mode (Production MySQL)
+python3 main.py --scraper general --environment prod
+```
+
+### Testing Your Setup
+```bash
+# Test configuration
+python3 src/scrapers/config/config_loader.py
+
+# Test Google API
+curl "https://www.googleapis.com/customsearch/v1?key=YOUR_API_KEY&cx=YOUR_SEARCH_ENGINE_ID&q=test"
+
+# Test AI discovery
+python3 main.py --scraper ai_discovery
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### 1. Google API 403 Forbidden Error
+**Error:** `403 Client Error: Forbidden` with `API_KEY_SERVICE_BLOCKED`
+
+**Solution:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to "APIs & Services" > "Library"
+3. Search for "Custom Search API" and enable it
+4. Go to "APIs & Services" > "Credentials"
+5. Edit your API key
+6. Under "API restrictions", either:
+   - Select "Don't restrict key" (for testing)
+   - Or add "Custom Search API" to allowed APIs
+
+#### 2. Missing Environment Variables
+**Error:** `❌ Missing required API keys for AI discovery scraper`
+
+**Solution:**
+1. Check your `.env` file is in the parent directory
+2. Verify all required keys are set:
+   - `OPENAI_API_KEY`
+   - `GOOGLE_API_KEY`
+   - `GOOGLE_CUSTOM_SEARCH_CX`
+
+#### 3. Virtual Environment Issues
+**Error:** `ModuleNotFoundError: No module named 'dotenv'`
+
+**Solution:**
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### 4. Import Errors
+**Error:** `attempted relative import beyond top-level package`
+
+**Solution:**
+- Use the main.py approach: `python3 main.py --scraper ai_discovery`
+- Don't run individual modules directly
+
+### Cost Estimates
+
+#### OpenAI API
+- **GPT-3.5-turbo**: ~$0.002 per 1K tokens
+- **Typical run**: ~$0.10-0.50 per category
+- **Monthly estimate**: $5-20 depending on usage
+
+#### Google Custom Search API
+- **Free tier**: 100 queries/day
+- **Paid tier**: $5 per 1000 queries
+- **Typical run**: 10-50 queries
+- **Monthly estimate**: $0-5 depending on usage
+
+### Getting Help
+
+1. **Check the logs** for detailed error messages
+2. **Verify API keys** are correctly set in `.env`
+3. **Test individual components** using the test commands above
+4. **Check Google Cloud Console** for API enablement and restrictions
+
+## Next Steps
+
+1. **Start with the general scraper** to test your setup
+2. **Set up API keys** for AI discovery features
+3. **Test different strategies** to find what works best for your needs
+4. **Monitor costs** and adjust usage accordingly
+5. **Customize categories** in `config/source_categories.json` for your specific interests

@@ -132,7 +132,19 @@ class BaseScraper(ABC):
         except Exception as e:
             logger.error(f"Scraping failed: {e}")
             self.update_job_status('failed', ScrapingMetadata(errors=[str(e)]))
-            raise
+            
+            # Return a proper ScrapingResult instead of raising the exception
+            return ScrapingResult(
+                success=False,
+                scholarships=[],
+                errors=[str(e)],
+                metadata={
+                    'total_found': 0,
+                    'total_processed': 0,
+                    'total_inserted': 0,
+                    'total_updated': 0
+                }
+            )
         finally:
             # Clean up database connection
             self.close_db_connection()

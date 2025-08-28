@@ -85,7 +85,7 @@ INSERT IGNORE INTO websites (website_id, name, url, enabled, scraper_type) VALUE
 -- TypeScript scrapers (production)
 ('careeronestop', 'CareerOneStop', 'https://www.careeronestop.org', TRUE, 'typescript'),
 ('collegescholarship', 'CollegeScholarship.org', 'https://www.collegescholarships.org', TRUE, 'typescript'),
-('general_search', 'General Search (AI)', 'https://bedrock.amazonaws.com', TRUE, 'typescript'),
+('general_search', 'General Search (AI)', 'https://openai.com', TRUE, 'python'),
 -- Python scrapers (local development)
 ('careeronestop_python', 'CareerOneStop (Python)', 'https://www.careeronestop.org', TRUE, 'python'),
 ('collegescholarship_python', 'CollegeScholarship (Python)', 'https://www.collegescholarships.org', TRUE, 'python'),

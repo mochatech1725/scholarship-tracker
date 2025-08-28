@@ -58,9 +58,7 @@ logs/
 *.sqlite
 *.sqlite3
 
-# AWS
-.aws/
-aws-credentials
+
 
 # CDK
 cdk.out/

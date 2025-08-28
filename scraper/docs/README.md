@@ -54,7 +54,7 @@ npm run docker:build:dev
 - **EventBridge**: Scheduled job triggers (hourly)
 - **Lambda**: Job orchestration
 - **CloudWatch**: Monitoring and logging
-- **Bedrock**: Intelligent search capabilities
+- **OpenAI**: Intelligent search capabilities
 
 ### Data Flow
 ```
@@ -115,7 +115,7 @@ scholarship-scraper2/
 - **CollegeScholarshipScraper**: Web crawling for collegescholarships.com
 - **GumLoopScraper**: AI-powered web crawling for known sites
 - **GumLoopDiscoveryScraper**: Intelligent discovery crawling
-- **GeneralSearchScraper**: Bedrock AI-powered search
+- **GeneralSearchScraper**: OpenAI AI-powered search
 
 ### Adding New Scrapers
 1. Create new scraper class extending `BaseScraper`
@@ -190,7 +190,7 @@ npm run diff:prod     # View changes for production
 ## API Keys & External Services
 
 ### Required
-- **Bedrock**: For AI-powered search and data extraction
+- **OpenAI**: For AI-powered search and data extraction
 - **AWS Credentials**: For all AWS services
 
 ### Optional

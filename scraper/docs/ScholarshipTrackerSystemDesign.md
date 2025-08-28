@@ -16,15 +16,15 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 - **Hybrid Scraper Architecture**: Python scrapers for local development, TypeScript scrapers for production
 - **AWS CDK Infrastructure**: VPC, RDS MySQL, Batch, Lambda, S3, CloudWatch
 - **3 Web Scrapers**: CareerOneStop, CollegeScholarship, General Search
-- **AI Processing**: AWS Bedrock integration in TypeScript scrapers
+- **AI Processing**: OpenAI integration in Python scrapers
 - **Local Development Environment**: Python virtual environment with local MySQL
-- **Database Migration**: Complete migration from DynamoDB to MySQL
+- **Database**: MySQL for both development and production
 - **Dynamic Scraper Selection**: Database-driven switching between Python/TypeScript
 - **Job Orchestration**: Automated scheduling and monitoring
 - **Server and Client Applications**: Separate repositories with Auth0 integration
 
 **Production Ready**:
-- TypeScript scrapers with AWS Bedrock AI processing
+- Python scrapers with OpenAI AI processing
 - Scalable AWS infrastructure with auto-scaling
 - Comprehensive error handling and monitoring
 - Security best practices with IAM, VPC, and secrets management
@@ -78,7 +78,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 ```
 
 **Hybrid Scraper Architecture:**
-- **Production**: TypeScript scrapers with AWS Bedrock AI processing
+- **Production**: Python scrapers with OpenAI AI processing
 - **Development**: Python scrapers with BeautifulSoup for local testing
 - **Dynamic Switching**: Database-driven selection based on environment
 - **Shared Database**: Both environments use MySQL (RDS for production, local for development)
@@ -92,7 +92,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 - **Recommender System**: Management of recommendation letters and references
 - **Advanced Search**: Intelligent scholarship matching and filtering
 - **Scheduled Data Updates**: Automated scholarship data refresh via independent scraper service
-- **AI-Powered Processing**: AWS Bedrock integration in TypeScript scrapers
+- **AI-Powered Processing**: OpenAI integration in Python scrapers
 - **Cost-Effective Development**: Local testing without AWS charges
 
 ## 2. Component 1: Scholarship Scraper (Hybrid Architecture)
@@ -104,7 +104,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 - **Compute**: AWS Batch with Fargate
 - **Database**: AWS RDS MySQL (for all data)
 - **Storage**: Amazon S3 for raw data
-- **AI/ML**: AWS Bedrock for intelligent processing
+- **AI/ML**: OpenAI for intelligent processing
 - **Monitoring**: CloudWatch Logs
 - **Security**: IAM roles, VPC, Security Groups
 
@@ -113,7 +113,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 - **Web Scraping**: BeautifulSoup, Requests, Selenium
 - **Database**: Local MySQL instance
 - **Storage**: Local file system for debugging
-- **AI/ML**: Local processing (no AWS Bedrock)
+- **AI/ML**: Local processing (no OpenAI)
 - **Monitoring**: Local logging
 - **Security**: Local development security
 
@@ -175,7 +175,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 1. **Scheduled Trigger**: EventBridge triggers Lambda orchestrator
 2. **Job Submission**: Lambda submits Batch jobs to ECS
 3. **Web Scraping**: Fargate containers scrape scholarship websites
-4. **AI Processing**: AWS Bedrock processes data for intelligent categorization
+4. **AI Processing**: OpenAI processes data for intelligent categorization
 5. **Data Storage**: Results stored in S3 and RDS MySQL
 6. **Monitoring**: CloudWatch tracks performance and errors
 
@@ -191,7 +191,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 
 #### Production Features (TypeScript)
 - **Multi-Source Scraping**: CareerOneStop, CollegeScholarship, General Search
-- **AI-Powered Processing**: AWS Bedrock for intelligent data extraction and categorization
+- **AI-Powered Processing**: OpenAI for intelligent data extraction and categorization
 - **Rate Limiting**: Respectful web scraping with delays
 - **Error Handling**: Robust error recovery and retry mechanisms
 - **Scalable Architecture**: Auto-scaling based on workload
@@ -222,7 +222,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 - **Isolated data** to prevent conflicts with production
 
 **Migration Status**: 
-- ✅ **Complete**: All data migrated from DynamoDB to MySQL
+- ✅ **Complete**: MySQL database for all environments
 - ✅ **Unified**: Single database schema for all components
 - ✅ **Consistent**: Same structure across production and development
 
@@ -272,7 +272,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 - **Database**: AWS RDS MySQL with Knex.js ORM
 - **Authentication**: Auth0 integration
 - **Security**: Helmet, CORS, JWT validation
-- **AWS Integration**: Secrets Manager, Bedrock, Comprehend
+- **AWS Integration**: Secrets Manager, S3, RDS
 
 **Note**: The server is completely independent of the scraper service. It only reads scholarship data from the shared database that the scraper populates.
 
@@ -471,7 +471,7 @@ CREATE TABLE recommenders (
 ```
 1. Scraper Service (Independent)
    ├── Discovers scholarships via web scraping
-   ├── Processes data with AI (Bedrock) (2/4 scrapers)
+   ├── Processes data with AI (OpenAI) (2/4 scrapers)
    └── Stores in RDS MySQL database
    └── Runs on scheduled intervals (no direct communication with server)
 

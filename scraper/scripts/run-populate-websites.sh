@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script to populate the scholarship-websites DynamoDB table
+# Script to populate the scholarship-websites MySQL table
 # This script can be run multiple times safely
 
 set -e
@@ -16,15 +16,9 @@ ENVIRONMENT=${ENVIRONMENT:-dev}
 
 echo -e "${GREEN}🚀 Starting website table population for environment: ${ENVIRONMENT}${NC}"
 
-# Check if AWS CLI is installed
-if ! command -v aws &> /dev/null; then
-    echo -e "${RED}❌ AWS CLI is not installed. Please install it first.${NC}"
-    exit 1
-fi
-
-# Check if AWS credentials are configured
-if ! aws sts get-caller-identity &> /dev/null; then
-    echo -e "${RED}❌ AWS credentials are not configured. Please run 'aws configure' first.${NC}"
+# Check if MySQL is installed
+if ! command -v mysql &> /dev/null; then
+    echo -e "${RED}❌ MySQL is not installed. Please install it first.${NC}"
     exit 1
 fi
 
@@ -41,16 +35,15 @@ if ! command -v ts-node &> /dev/null; then
 fi
 
 # Check if the table exists
-TABLE_NAME="scholarship-websites-${ENVIRONMENT}"
-echo -e "${YELLOW}🔍 Checking if table ${TABLE_NAME} exists...${NC}"
+echo -e "${YELLOW}🔍 Checking if websites table exists...${NC}"
 
-if ! aws dynamodb describe-table --table-name "$TABLE_NAME" &> /dev/null; then
-    echo -e "${RED}❌ Table ${TABLE_NAME} does not exist. Please deploy the CDK stack first.${NC}"
-    echo -e "${YELLOW}💡 Run: npm run cdk:deploy${NC}"
+if ! mysql -u root -e "USE scholarships; DESCRIBE websites;" &> /dev/null; then
+    echo -e "${RED}❌ Table websites does not exist. Please run the database setup script first.${NC}"
+    echo -e "${YELLOW}💡 Run: mysql -u root < scripts/python/setup_local_db.sql${NC}"
     exit 1
 fi
 
-echo -e "${GREEN}✅ Table ${TABLE_NAME} exists${NC}"
+echo -e "${GREEN}✅ Table websites exists${NC}"
 
 # Set environment variable for the script
 export ENVIRONMENT=$ENVIRONMENT
@@ -61,18 +54,14 @@ echo -e "${YELLOW}📝 Running website table population script...${NC}"
 # Change to the project root directory
 cd "$(dirname "$0")/.."
 
-# Run the TypeScript script
-npx ts-node scripts/populate-websites-table.ts
+# Run the Python script
+python3 scripts/python/populate_websites.py
 
 echo -e "${GREEN}✅ Website table population completed successfully!${NC}"
 
 # Verify the data was inserted
 echo -e "${YELLOW}🔍 Verifying data...${NC}"
-aws dynamodb scan \
-    --table-name "$TABLE_NAME" \
-    --select COUNT \
-    --query "Count" \
-    --output text
+mysql -u root -e "USE scholarships; SELECT COUNT(*) as count FROM websites;"
 
 echo -e "${GREEN}🎉 All done! The websites table has been populated.${NC}"
 echo -e "${YELLOW}💡 You can now run the scraper jobs.${NC}" 

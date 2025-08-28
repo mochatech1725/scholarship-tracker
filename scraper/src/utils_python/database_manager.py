@@ -148,18 +148,18 @@ class LocalDatabaseManager(DatabaseManager):
 
 
 class ProductionDatabaseManager(DatabaseManager):
-    """Production AWS RDS MySQL database manager"""
+    """Production MySQL database manager"""
     
     def __init__(self, environment: str = "prod"):
         super().__init__(environment)
-        self.host = os.getenv('RDS_MYSQL_HOST')
-        self.port = int(os.getenv('RDS_MYSQL_PORT', '3306'))
-        self.user = os.getenv('RDS_MYSQL_USER')
-        self.password = os.getenv('RDS_MYSQL_PASSWORD')
-        self.database = os.getenv('RDS_MYSQL_DATABASE', 'scholarships')
+        self.host = os.getenv('PROD_MYSQL_HOST')
+        self.port = int(os.getenv('PROD_MYSQL_PORT', '3306'))
+        self.user = os.getenv('PROD_MYSQL_USER')
+        self.password = os.getenv('PROD_MYSQL_PASSWORD')
+        self.database = os.getenv('PROD_MYSQL_DATABASE', 'scholarships')
     
     def connect(self) -> bool:
-        """Connect to AWS RDS MySQL database"""
+        """Connect to production MySQL database"""
         try:
             self.connection = pymysql.connect(
                 host=self.host,
@@ -170,20 +170,20 @@ class ProductionDatabaseManager(DatabaseManager):
                 charset='utf8mb4',
                 cursorclass=pymysql.cursors.DictCursor
             )
-            logger.debug(f"Connected to AWS RDS MySQL database: {self.database}")
+            logger.debug(f"Connected to production MySQL database: {self.database}")
             return True
         except Exception as e:
-            logger.error(f"Failed to connect to AWS RDS MySQL: {e}")
+            logger.error(f"Failed to connect to production MySQL: {e}")
             return False
     
     def disconnect(self):
         """Close production database connection"""
         if self.connection and self.connection.open:
             self.connection.close()
-            logger.debug("Disconnected from AWS RDS MySQL database")
+            logger.debug("Disconnected from production MySQL database")
     
     def save_scholarship(self, scholarship: Scholarship) -> bool:
-        """Save scholarship to AWS RDS MySQL database"""
+        """Save scholarship to production MySQL database"""
         conn = self.get_connection()
         if not conn:
             return False
@@ -217,29 +217,29 @@ class ProductionDatabaseManager(DatabaseManager):
                 
                 query = f"UPDATE scholarships SET {placeholders} WHERE scholarship_id = %s"
                 cursor.execute(query, values)
-                logger.info(f"Updated scholarship in AWS RDS: {scholarship.title}")
+                logger.info(f"Updated scholarship in production DB: {scholarship.title}")
             else:
                 # Insert new scholarship
                 placeholders = ', '.join(['%s'] * len(data))
                 columns = ', '.join(data.keys())
                 query = f"INSERT INTO scholarships ({columns}) VALUES ({placeholders})"
                 cursor.execute(query, list(data.values()))
-                logger.info(f"Inserted scholarship in AWS RDS: {scholarship.title}")
+                logger.info(f"Inserted scholarship in production DB: {scholarship.title}")
             
             conn.commit()
             return True
             
         except Exception as e:
             conn.rollback()
-            logger.error(f"AWS RDS MySQL database error: {e}")
+            logger.error(f"Production MySQL database error: {e}")
             raise
         finally:
             cursor.close()
     
     def update_job_status(self, status: str, metadata: Any):
-        """Update job status (production mode would update DynamoDB)"""
-        logger.info(f"AWS RDS job status update: {status} - {metadata}")
-        # In a real implementation, this would update DynamoDB or another job tracking system
+        """Update job status (production mode would update job tracking system)"""
+        logger.info(f"Production job status update: {status} - {metadata}")
+        # In a real implementation, this would update a job tracking system
     
     def _create_scholarship_id(self) -> str:
         """Generate a unique scholarship ID"""

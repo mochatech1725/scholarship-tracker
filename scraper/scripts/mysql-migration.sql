@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS websites;
 
 -- Create scholarships table
 CREATE TABLE scholarships (
-  id VARCHAR(255) NOT NULL,
+  scholarship_id VARCHAR(255) NOT NULL,
   name VARCHAR(500) NOT NULL,
   deadline VARCHAR(100),
   url TEXT,
@@ -38,7 +38,7 @@ CREATE TABLE scholarships (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   
   -- Primary key
-  PRIMARY KEY (id),
+  PRIMARY KEY (scholarship_id),
   
   -- Indexes for common queries
   INDEX idx_deadline (deadline),
@@ -169,7 +169,10 @@ CREATE TABLE IF NOT EXISTS applications (
   -- Composite indexes for common query patterns
   INDEX idx_user_status (user_id, status),
   INDEX idx_scholarship_status (scholarship_id, status),
-  INDEX idx_organization_status (organization, status)
+  INDEX idx_organization_status (organization, status),
+  
+  -- Foreign key constraint to scholarships table
+  FOREIGN KEY (scholarship_id) REFERENCES scholarships(scholarship_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Show applications table structure

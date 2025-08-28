@@ -166,15 +166,21 @@ class GeneralScraper(BaseScraper):
     def _parse_scholarship_element(self, element) -> Optional[Scholarship]:
         """Parse a single scholarship element with broader selectors"""
         try:
-            # Extract basic information with broader selectors
-            title = self._extract_text(element, ['h1', 'h2', 'h3', 'h4', 'h5', 'strong', 'b', '.title', '.name', '.scholarship-title'])
+            # Extract basic information with more specific selectors
+            title = self._extract_text(element, ['h1', 'h2', 'h3', 'h4', 'h5', '.title', '.name', '.scholarship-title', '.scholarship-name', '.award-name'])
             if not title:
+                return None
+            
+            # Skip if title is just a number or amount (common extraction error)
+            import re
+            if re.match(r'^[\d,]+$', title.strip()) or re.match(r'^\$[\d,]+$', title.strip()):
+                logger.warning(f"Skipping scholarship with numeric title: {title}")
                 return None
             
             # Extract organization
             organization = self._extract_text(element, ['.organization', '.sponsor', '.company', '.provider'])
             
-            # Extract amount with broader patterns
+            # Extract amount with broader patterns (keep strong and b for amounts)
             amount_text = self._extract_text(element, ['.amount', '.award', '.funds', '.value', 'strong', 'b'])
             min_award, max_award = self._parse_amount(amount_text)
             

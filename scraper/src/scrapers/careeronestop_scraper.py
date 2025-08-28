@@ -204,6 +204,12 @@ class CareerOneStopScraper(BaseScraper):
             if not title or title == 'Award Name':
                 return None
             
+            # Skip if title is just a number or amount (common extraction error)
+            import re
+            if re.match(r'^[\d,]+$', title.strip()) or re.match(r'^\$[\d,]+$', title.strip()):
+                logger.warning(f"Skipping scholarship with numeric title: {title}")
+                return None
+            
             # Extract organization from name cell text
             organization_text = name_cell.get_text()
             import re

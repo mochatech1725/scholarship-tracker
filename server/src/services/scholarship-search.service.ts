@@ -334,7 +334,7 @@ export class ScholarshipSearchService {
     academicLevels: string[];
   }> {
     try {
-      // This would need to be implemented in DynamoDB service
+      // This would need to be implemented in the database service
       // For now, return placeholder data
       return {
         totalScholarships: 0,

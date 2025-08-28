@@ -26,12 +26,12 @@
 - **CollegeScholarship**:  Web crawling for CollegeScholarships.com
 - **GumLoop**: AI-powered web crawling for known scholarship sites
 - **GumLoop Discovery**: Intelligent discovery crawling for new opportunities
-- **General Search**: Uses Bedrock AI to intelligently search and extract data
+- **General Search**: Uses OpenAI AI to intelligently search and extract data
 
 ### 4. Data Processing
 
 - **Raw Data Storage**: S3 for HTML, JSON, and API responses
-- **AI Processing**: Bedrock for intelligent data extraction
+- **AI Processing**: OpenAI for intelligent data extraction
 - **Deduplication**: MD5 hash-based duplicate detection
 - **Data Parsing**: Intelligent extraction of scholarship details
 - **Validation**: Ensures data quality before storage

@@ -183,7 +183,7 @@ The system provides automated scholarship discovery through AI-powered web scrap
 - **Compute**: AWS Batch with Fargate
 - **Container Registry**: Amazon ECR
 - **Storage**: Amazon S3 for raw data
-- **AI/ML**: AWS Bedrock for intelligent processing
+- **AI/ML**: OpenAI for intelligent processing
 - **Monitoring**: CloudWatch Logs and Metrics
 - **Secrets Management**: AWS Secrets Manager
 - **Networking**: VPC with private/public subnets
@@ -239,7 +239,7 @@ The system provides automated scholarship discovery through AI-powered web scrap
 - **AWS S3**: Object storage for raw data and assets
 - **AWS Batch**: Containerized batch processing
 - **AWS Lambda**: Serverless function execution
-- **AWS Bedrock**: AI/ML processing capabilities
+- **OpenAI**: AI/ML processing capabilities
 - **AWS Secrets Manager**: Secure credential management
 - **AWS CloudWatch**: Monitoring and logging
 

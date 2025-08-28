@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Ethical Web Crawler
-Follows AWS best practices for web crawling with robots.txt compliance
+Follows web crawling best practices with robots.txt compliance
 """
 
 import os

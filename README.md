@@ -189,8 +189,8 @@ To use the workspace:
 - **Framework**: Custom scraping framework with AI-powered discovery
 - **AI Integration**: OpenAI GPT for query generation and content verification
 - **Search Integration**: Google Custom Search API for source discovery
-- **Deployment**: AWS Lambda with CDK
-- **Storage**: AWS S3 and RDS
+- **Deployment**: Local Python environment
+- **Storage**: Local MySQL database
 
 ## Troubleshooting
 

@@ -210,6 +210,12 @@ class CollegeScholarshipScraper(BaseScraper):
             if 'Find Scholarships' in title:
                 return None
             
+            # Skip if title is just a number or amount (common extraction error)
+            import re
+            if re.match(r'^[\d,]+$', title.strip()) or re.match(r'^\$[\d,]+$', title.strip()):
+                logger.warning(f"Skipping scholarship with numeric title: {title}")
+                return None
+            
             # Extract description from description section (like TypeScript version)
             desc_paragraphs = description.find_all('p', class_=lambda x: x != 'visible-xs')
             description_text = ''
