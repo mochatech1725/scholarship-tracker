@@ -7,6 +7,7 @@ import os
 import logging
 import requests
 import time
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -196,8 +197,8 @@ class GeneralScraper(BaseScraper):
                 source="Efficient Scraper",
                 country="US",
                 active=True,
-                created_at=time.time(),
-                updated_at=time.time(),
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
                 min_award=min_award,
                 max_award=max_award,
                 deadline=deadline
