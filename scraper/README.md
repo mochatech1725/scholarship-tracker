@@ -1,224 +1,377 @@
-# Scholarship Tracker - Scraper Component
+# Scholarship Scraper - Complete Guide
 
-This is the scraper component of the Scholarship Tracker system, featuring Python-based scrapers for both development and production environments.
+A comprehensive, AI-powered scholarship discovery system that finds scholarships from diverse sources including businesses, professional associations, and industry organizations.
 
-## 🏗️ Architecture Overview
+## Table of Contents
 
-### Scraper Design
-- **Python Scrapers**: For local development, testing, and production
-- **Environment Support**: Local, dev, staging, production
+1. [Overview](#overview)
+2. [Architecture](#architecture)
+3. [Scraping Strategies](#scraping-strategies)
+4. [Setup and Configuration](#setup-and-configuration)
+5. [Usage](#usage)
+6. [Troubleshooting](#troubleshooting)
 
-### Components
-- **Python Scrapers**: BeautifulSoup-based scrapers for development and production
-- **AWS Infrastructure**: CDK-based infrastructure as code
-- **Database**: MySQL for both development and production
+## Overview
 
-## 🚀 Quick Start
+This scraper provides multiple approaches for discovering scholarship opportunities:
 
-### Prerequisites
-- Python 3.13+
-- Node.js 18+
-- MySQL (local for development)
-- AWS CLI (for production deployment)
+- **AI Discovery Scraper**: Finds scholarships from businesses and industry organizations using AI
+- **General Scraper**: Efficient broad-based scraping of major scholarship sites
+- **Website-Specific Scrapers**: Targeted scraping of specific scholarship websites
 
-### Local Development Setup
+## Architecture
 
-1. **Clone and Setup**
-   ```bash
-   cd /Users/teial/Tutorials/scholarship-tracker/scraper
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
+### AI Discovery Components
 
-2. **Database Setup**
-   ```bash
-   mysql -u root < scripts/python/setup_local_db.sql
-   ```
+#### 1. Source Discovery Engine (`source_discovery_engine.py`)
+- **Purpose**: AI-powered discovery of new scholarship sources
+- **Features**:
+  - Generates targeted Google search queries using OpenAI
+  - Performs Google Custom Search API queries
+  - Uses AI to verify if discovered URLs actually offer scholarships
+  - Supports multiple categories (STEM, Business, Industry sectors)
 
-3. **Environment Configuration**
-   ```bash
-   cp env.example .env.local
-   # Edit .env.local with your local database settings
-   ```
+#### 2. Ethical Crawler (`ethical_crawler.py`)
+- **Purpose**: Polite and efficient website crawling
+- **Features**:
+  - Respects `robots.txt` directives
+  - Implements crawl delays and rate limiting
+  - Extracts URLs from sitemaps
+  - Follows AWS web crawling best practices
+  - Extracts basic scholarship data during crawling
 
-4. **Test Scrapers**
-   ```bash
-   # Test CareerOneStop scraper
-   python main.py --scraper careerone --environment local
-   
-   # Test CollegeScholarship scraper
-   python main.py --scraper collegescholarship --environment local
-   
-   # List available scrapers
-   python main.py --list
-   ```
+#### 3. Content Extraction Pipeline (`content_extraction_pipeline.py`)
+- **Purpose**: AI-enhanced extraction of scholarship details
+- **Features**:
+  - Uses OpenAI for structured data extraction
+  - Falls back to regex pattern matching if AI unavailable
+  - Extracts title, amount, deadline, eligibility, and more
+  - Supports both HTML and PDF content
 
-### Production Deployment
+#### 4. AI Discovery Scraper (`ai_discovery_scraper.py`)
+- **Purpose**: Main orchestrator that integrates all components
+- **Features**:
+  - Multi-stage pipeline: Discovery → Crawling → Extraction → Processing
+  - Configurable limits and thresholds
+  - Comprehensive statistics and monitoring
+  - Database integration for saving results
 
-1. **Install Dependencies**
-   ```bash
-   npm install
-   ```
+#### 5. Configuration System (`config/`)
+- **Purpose**: Centralized configuration management
+- **Features**:
+  - JSON-based category definitions
+  - Simple structure with just id, name, and keywords
+  - Easy to modify and extend
+  - Portable across different environments
 
-2. **Deploy Infrastructure**
-   ```bash
-   npm run cdk deploy
-   ```
+### Category Configuration
 
-3. **Configure Environment**
-   ```bash
-   # Set up AWS credentials and environment variables
-   export AWS_REGION=us-east-1
-   export ENVIRONMENT=prod
-   ```
+The system uses a simplified category structure defined in `config/source_categories.json`:
 
-## 📁 Project Structure
-
-```
-scraper/
-├── src/                    # Source code
-│   ├── scrapers/          # Python scraper implementations
-│   ├── utils_python/      # Python utilities and types
-│   ├── utils/             # TypeScript utilities
-│   ├── batch/             # AWS Batch job definitions
-│   ├── lambda/            # Lambda functions
-│   └── cdk/               # CDK infrastructure code
-├── cdk/                   # AWS CDK infrastructure code
-├── scripts/               # Setup and utility scripts
-│   ├── python/           # Python development scripts
-│   └── aws/              # AWS deployment scripts
-├── docs/                  # Documentation
-├── main.py                # Main entry point
-├── package.json           # Node.js dependencies
-├── requirements.txt       # Python dependencies
-└── README.md             # This file
+```json
+{
+  "categories": [
+    {
+      "id": "STEM",
+      "name": "STEM",
+      "keywords": ["engineering", "technology", "tech", "software", "hardware", "computer science", "STEM"]
+    },
+    {
+      "id": "healthcare_medical",
+      "name": "Healthcare & Medical", 
+      "keywords": ["healthcare", "medical", "hospital"]
+    }
+  ]
+}
 ```
 
-## 🔧 Available Scrapers
+#### Current Categories (8 total):
+- **STEM** - Engineering firms, tech companies, computer science organizations
+- **Healthcare & Medical** - Hospitals, medical practices, healthcare organizations
+- **Pharmaceuticals** - Pharmaceutical companies, biotech firms
+- **Financial Services** - Banks, insurance companies, investment firms
+- **Energy & Utilities** - Energy companies, utility providers
+- **Consumer Goods** - Consumer product companies, retail brands
+- **Agriculture & Food** - Agricultural companies, food producers
+- **Construction & Real Estate** - Construction firms, real estate companies
 
-### Python Scrapers
-- `careeronestop` - CareerOneStop.org scraper
-- `collegescholarship` - CollegeScholarships.org scraper
-- `general` - General web scraper
-- `rss` - RSS/API feed scraper
+## Scraping Strategies
 
+### 1. **AI Discovery Scraper** (Most Advanced)
 
+**File:** `ai_discovery_scraper.py`
 
-## 🌍 Environment Switching
+**Approach:**
+- Uses AI to discover new scholarship sources from businesses and organizations
+- Generates targeted search queries using OpenAI
+- Ethically crawls websites respecting robots.txt
+- Extracts structured scholarship data using AI
 
-The system supports multiple environments:
+**Benefits:**
+- Finds "hidden" scholarships from non-traditional sources
+- AI-powered discovery and extraction
+- Ethical web crawling
+- Comprehensive coverage across industries
+
+**Usage:**
+```bash
+python3 main.py --scraper ai_discovery
+```
+
+### 2. **General Scraper** (Efficient Broad Search)
+
+**File:** `general_scraper.py`
+
+**Approach:**
+- Uses only 3-6 broad search terms instead of 40+ specific keywords
+- Searches: `['scholarship', 'financial aid', 'grant', 'fellowship', 'award']`
+- Gets more results per search by using broader selectors
+- Much faster and more efficient than keyword-by-keyword approach
+
+**Benefits:**
+- 6x faster than keyword-by-keyword approach
+- Less likely to hit rate limits
+- More comprehensive results per search
+- Easier to maintain
+
+**Usage:**
+```bash
+python3 main.py --scraper general
+```
+
+### 3. **Website-Specific Scrapers** (Targeted)
+
+**Files:** `careeronestop_scraper.py`, `collegescholarship_scraper.py`
+
+**Approach:**
+- Targeted scraping of specific scholarship websites
+- Uses efficient broad search approach
+- Searches with single broad term: `'scholarship'`
+- Much faster than the old keyword-by-keyword approach
+
+**Usage:**
+```bash
+python3 main.py --scraper careeronestop_python
+python3 main.py --scraper collegescholarship_python
+```
+
+### Performance Comparison
+
+| Approach | Speed | Reliability | Data Quality | Discovery | Maintenance |
+|----------|-------|-------------|--------------|-----------|-------------|
+| AI Discovery | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| General | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐ |
+| Website-Specific | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐ |
+
+### Recommended Strategy
+
+#### For Production:
+```bash
+# Weekly: Get comprehensive data with general scraper
+python3 main.py --scraper general
+
+# Monthly: Discover new sources with AI
+python3 main.py --scraper ai_discovery
+
+# Monthly: Get specific niche scholarships
+python3 main.py --scraper careeronestop_python
+python3 main.py --scraper collegescholarship_python
+```
+
+#### For Development/Testing:
+```bash
+# Quick test with general scraper
+python3 main.py --scraper general
+
+# Test AI discovery
+python3 main.py --scraper ai_discovery
+```
+
+## Setup and Configuration
+
+### 1. Environment Setup
+
+#### Virtual Environment
+```bash
+# Navigate to scraper directory
+cd scraper
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### Environment Variables
+Create a `.env` file in the parent directory (`/Users/teial/Tutorials/scholarship-tracker/.env`) with:
 
 ```bash
-# Local development
-python main.py --scraper careerone --environment local
+# Database Configuration
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_DATABASE=scholarships
 
-# Development environment
-python main.py --scraper careerone --environment dev
+# AWS RDS (for production)
+RDS_MYSQL_HOST=your-rds-endpoint.amazonaws.com
+RDS_MYSQL_PORT=3306
+RDS_MYSQL_USER=your_username
+RDS_MYSQL_PASSWORD=your_password
+RDS_MYSQL_DATABASE=scholarships
 
-# Staging environment
-python main.py --scraper careerone --environment staging
-
-# Production environment
-python main.py --scraper careerone --environment prod
+# AI Discovery Scraper (Required)
+OPENAI_API_KEY=your_openai_api_key_here
+GOOGLE_API_KEY=your_google_api_key_here
+GOOGLE_CUSTOM_SEARCH_CX=your_custom_search_engine_id_here
 ```
 
-## 🗄️ Database Schema
+### 2. API Setup
 
-### Core Tables
-- **scholarships**: Scholarship data storage
-- **websites**: Scraper configuration and type selection
-- **jobs**: Scraping job tracking and metadata
-- **users**: User management (for server integration)
-- **applications**: Application tracking (for server integration)
-- **recommenders**: Recommender management (for server integration)
+#### OpenAI API
+1. Go to [OpenAI Platform](https://platform.openai.com/)
+2. Create an account and get your API key
+3. Add to `.env`: `OPENAI_API_KEY=your_key_here`
 
-## 🔒 Security
+#### Google Custom Search API
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable the "Custom Search API"
+4. Create credentials (API Key)
+5. Add to `.env`: `GOOGLE_API_KEY=your_key_here`
 
-### Production Security
-- VPC isolation with private subnets
-- IAM roles with least privilege access
-- AWS Secrets Manager for credentials
-- Security groups and VPC endpoints
+#### Google Custom Search Engine
+1. Go to [Google Programmable Search Engine](https://programmablesearchengine.google.com/)
+2. Create a new search engine
+3. Get your Search Engine ID
+4. Add to `.env`: `GOOGLE_CUSTOM_SEARCH_CX=your_engine_id_here`
 
-### Development Security
-- Local virtual environment isolation
-- Local MySQL with development credentials
-- No external dependencies for testing
+### 3. Database Setup
 
-## 📊 Monitoring
+#### Local MySQL
+```bash
+# Install MySQL if not already installed
+brew install mysql  # macOS
+sudo apt-get install mysql-server  # Ubuntu
 
-### Production Monitoring
-- CloudWatch Logs and Metrics
-- AWS Batch job monitoring
-- Lambda function monitoring
-- Database performance monitoring
+# Start MySQL
+brew services start mysql  # macOS
+sudo systemctl start mysql  # Ubuntu
 
-### Development Monitoring
-- Local logging to console
-- Debug tools for HTML analysis
-- Local database inspection
+# Create database
+mysql -u root -p
+CREATE DATABASE scholarships;
+```
 
-## 🛠️ Development Tools
+#### AWS RDS (Optional)
+1. Create an RDS MySQL instance in AWS
+2. Note the endpoint, username, and password
+3. Add to `.env` file
 
-### Debug Scripts
-- `scripts/python/debug_collegescholarship.py` - HTML structure analysis
-- `scripts/python/configure_scrapers.py` - Scraper configuration management
-- `scripts/python/test_environment_switch.py` - Environment switching tests
+## Usage
 
-### Utility Scripts
-- `scripts/python/run_scraper.sh` - Simplified scraper execution
-- `scripts/python/setup_local_db.sql` - Local database setup
-- `scripts/aws/` - AWS deployment and management scripts
+### Basic Usage
+```bash
+# List available scrapers
+python3 main.py --help
 
-## 📈 Performance
+# Run a specific scraper
+python3 main.py --scraper ai_discovery
+python3 main.py --scraper general
+```
 
-### Production Performance
-- AWS Batch auto-scaling
-- S3 storage for raw data
-- CloudWatch monitoring
-- Lambda orchestration
+### Environment Switching
+```bash
+# Local mode (default)
+python3 main.py --scraper general --environment local
 
-### Development Performance
-- Local processing for immediate feedback
-- No AWS charges during development
-- Fast iteration and debugging
-- Isolated testing environment
+# Production mode (AWS RDS)
+python3 main.py --scraper general --environment prod
+```
 
-## 🤝 Contributing
+### Testing Your Setup
+```bash
+# Test configuration
+python3 src/scrapers/config/config_loader.py
 
-1. **Local Development**: Use Python scrapers for testing
-2. **Production Changes**: Update Python scrapers
-3. **Infrastructure**: Modify CDK code for AWS changes
-4. **Database**: Update schema in setup scripts
+# Test Google API
+curl "https://www.googleapis.com/customsearch/v1?key=YOUR_API_KEY&cx=YOUR_SEARCH_ENGINE_ID&q=test"
 
-## 📚 Documentation
+# Test AI discovery
+python3 main.py --scraper ai_discovery
+```
 
-- [System Design](docs/ScholarshipTrackerSystemDesign.md)
-- [Technical Design](docs/ScholarshipTrackerTechnicalDesign.md)
-- [Scraping Strategies](SCRAPING_STRATEGIES.md)
-- [Command Line Usage](scripts/python/COMMAND_LINE_USAGE.md)
-
-## 🆘 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
-1. **Database Connection**: Check `.env.local` configuration
-2. **Scraper Not Found**: Use `python main.py --list` to see available scrapers
-3. **Environment Issues**: Ensure virtual environment is activated
-4. **AWS Deployment**: Check AWS credentials and region settings
 
-### Debug Commands
+#### 1. Google API 403 Forbidden Error
+**Error:** `403 Client Error: Forbidden` with `API_KEY_SERVICE_BLOCKED`
+
+**Solution:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to "APIs & Services" > "Library"
+3. Search for "Custom Search API" and enable it
+4. Go to "APIs & Services" > "Credentials"
+5. Edit your API key
+6. Under "API restrictions", either:
+   - Select "Don't restrict key" (for testing)
+   - Or add "Custom Search API" to allowed APIs
+
+#### 2. Missing Environment Variables
+**Error:** `❌ Missing required API keys for AI discovery scraper`
+
+**Solution:**
+1. Check your `.env` file is in the parent directory
+2. Verify all required keys are set:
+   - `OPENAI_API_KEY`
+   - `GOOGLE_API_KEY`
+   - `GOOGLE_CUSTOM_SEARCH_CX`
+
+#### 3. Virtual Environment Issues
+**Error:** `ModuleNotFoundError: No module named 'dotenv'`
+
+**Solution:**
 ```bash
-# Check scraper configuration
-python scripts/python/configure_scrapers.py
+# Activate virtual environment
+source venv/bin/activate
 
-# Test database connection
-python scripts/python/test_mysql_connection.py
-
-# Debug HTML structure
-python debug_collegescholarship.py
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-## 📄 License
+#### 4. Import Errors
+**Error:** `attempted relative import beyond top-level package`
 
-This project is part of the Scholarship Tracker system. See the main project documentation for licensing information.
+**Solution:**
+- Use the main.py approach: `python3 main.py --scraper ai_discovery`
+- Don't run individual modules directly
+
+### Cost Estimates
+
+#### OpenAI API
+- **GPT-3.5-turbo**: ~$0.002 per 1K tokens
+- **Typical run**: ~$0.10-0.50 per category
+- **Monthly estimate**: $5-20 depending on usage
+
+#### Google Custom Search API
+- **Free tier**: 100 queries/day
+- **Paid tier**: $5 per 1000 queries
+- **Typical run**: 10-50 queries
+- **Monthly estimate**: $0-5 depending on usage
+
+### Getting Help
+
+1. **Check the logs** for detailed error messages
+2. **Verify API keys** are correctly set in `.env`
+3. **Test individual components** using the test commands above
+4. **Check Google Cloud Console** for API enablement and restrictions
+
+## Next Steps
+
+1. **Start with the general scraper** to test your setup
+2. **Set up API keys** for AI discovery features
+3. **Test different strategies** to find what works best for your needs
+4. **Monitor costs** and adjust usage accordingly
+5. **Customize categories** in `config/source_categories.json` for your specific interests

@@ -17,7 +17,7 @@ from src.scrapers.scraper_factory import ScraperOrchestrator, list_available_scr
 from src.utils_python import ScrapingResult
 
 # Load environment variables
-load_dotenv()
+load_dotenv('../.env')
 
 # Configure logging
 logging.basicConfig(
@@ -96,7 +96,7 @@ def run_single_scraper(scraper_name: str, environment: str = "local") -> Scrapin
             logger.error(f"      - 'careerone' (CareerOneStop)")
             logger.error(f"      - 'college' (CollegeScholarship)")
             logger.error(f"      - 'general' (General scraper)")
-            logger.error(f"      - 'rss' (RSS/API scraper)")
+    
         for error in result.errors:
             logger.error(f"   Error: {error}")
     
@@ -149,7 +149,7 @@ Examples:
         """
     )
     parser.add_argument('--scraper', '-s', 
-                       help='Name of the scraper to run (e.g., careerone, college, general, rss)')
+                       help='Name of the scraper to run (e.g., careerone, college, general, ai_discovery)')
     parser.add_argument('--all', '-a', 
                        action='store_true',
                        help='Run all available scrapers')

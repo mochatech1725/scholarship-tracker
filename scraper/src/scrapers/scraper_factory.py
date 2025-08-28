@@ -7,7 +7,7 @@ from .base_scraper import BaseScraper
 from .careeronestop_scraper import CareerOneStopScraper
 from .collegescholarship_scraper import CollegeScholarshipScraper
 from .general_scraper import GeneralScraper
-from .rss_scraper import RSSScraper
+from .ai_discovery_scraper import EnhancedAIDiscoveryScraper
 from ..utils_python import ScrapingResult
 from ..utils_python import get_scraper_type
 
@@ -26,7 +26,8 @@ class ScraperFactory:
         'collegescholarship_python': CollegeScholarshipScraper,
         'collegescholarship': CollegeScholarshipScraper,  # Alias for easier typing
         'general': GeneralScraper,
-        'rss': RSSScraper,
+        'enhanced_ai_discovery': EnhancedAIDiscoveryScraper,
+        'ai_discovery': EnhancedAIDiscoveryScraper,  # Alias for easier typing
         # Add more Python scrapers here as they're created
     }
     
@@ -59,6 +60,29 @@ class ScraperFactory:
         if scraper_type == "python" and scraper_name.lower() in cls._scrapers:
             scraper_class = cls._scrapers[scraper_name.lower()]
             logger.info(f"Creating Python scraper: {scraper_name}")
+            
+            # Special handling for AI discovery scraper
+            if scraper_name.lower() in ['enhanced_ai_discovery', 'ai_discovery']:
+                # Get API keys from environment
+                openai_key = os.getenv('OPENAI_API_KEY')
+                google_key = os.getenv('GOOGLE_API_KEY')
+                google_cse = os.getenv('GOOGLE_CUSTOM_SEARCH_CX')
+                
+                if not all([openai_key, google_key, google_cse]):
+                    logger.error("❌ Missing required API keys for AI discovery scraper")
+                    logger.error("   Required: OPENAI_API_KEY, GOOGLE_API_KEY, GOOGLE_CUSTOM_SEARCH_CX")
+                    logger.error("   Set these in your .env file")
+                    return None
+                
+                return scraper_class(
+                    openai_api_key=openai_key,
+                    google_api_key=google_key,
+                    google_cse_id=google_cse,
+                    max_sources_per_category=10,
+                    max_scholarships_per_source=5
+                )
+            
+            # Standard scraper creation
             return scraper_class(
                 scholarships_table=scholarships_table,
                 jobs_table=jobs_table,
@@ -88,7 +112,7 @@ class ScraperFactory:
             logger.error(f"     - 'careerone' (alias for careeronestop_python)")
             logger.error(f"     - 'collegescholarship' (alias for collegescholarship_python)")
             logger.error(f"     - 'general' (general scraper)")
-            logger.error(f"     - 'rss' (RSS/API scraper)")
+            logger.error(f"     - 'ai_discovery' (AI discovery scraper)")
             return None
     
     @classmethod

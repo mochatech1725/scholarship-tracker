@@ -90,7 +90,7 @@ INSERT IGNORE INTO websites (website_id, name, url, enabled, scraper_type) VALUE
 ('careeronestop_python', 'CareerOneStop (Python)', 'https://www.careeronestop.org', TRUE, 'python'),
 ('collegescholarship_python', 'CollegeScholarship (Python)', 'https://www.collegescholarships.org', TRUE, 'python'),
 ('general', 'General Scraper', 'https://example.com', TRUE, 'python'),
-('rss', 'RSS/API Scraper', 'https://example.com', TRUE, 'python');
+
 
 -- Create a view for active scholarships
 CREATE OR REPLACE VIEW active_scholarships AS

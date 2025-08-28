@@ -21,6 +21,9 @@ html5lib==1.1
 fake-useragent==1.4.0
 tenacity==8.2.3
 
+# AI and API libraries
+openai==1.12.0
+
 # Development
 pytest==8.2.2
 black==24.3.0

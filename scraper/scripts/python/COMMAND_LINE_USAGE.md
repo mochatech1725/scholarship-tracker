@@ -52,7 +52,7 @@ cd python-scraper && source venv/bin/activate && python main.py --scraper career
 | `careeronestop_python` | CareerOneStop.org scraper | `careerone` |
 | `collegescholarship_python` | CollegeScholarship.org scraper | `college` |
 | `general` | General web scraper | - |
-| `rss` | RSS/API scraper | - |
+
 
 ## Common Commands
 

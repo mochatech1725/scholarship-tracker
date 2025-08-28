@@ -13,7 +13,7 @@ echo "  python main.py --list                    # List available scrapers"
 echo "  python main.py --scraper careerone       # Run CareerOneStop scraper"
 echo "  python main.py --scraper collegescholarship  # Run CollegeScholarship scraper"
 echo "  python main.py --scraper general         # Run general scraper"
-echo "  python main.py --scraper rss             # Run RSS scraper"
+
 echo ""
 echo "💡 To deactivate the virtual environment, run: deactivate"
 echo ""

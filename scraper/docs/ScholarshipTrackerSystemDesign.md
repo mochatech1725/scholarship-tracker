@@ -15,7 +15,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 **Implemented**:
 - **Hybrid Scraper Architecture**: Python scrapers for local development, TypeScript scrapers for production
 - **AWS CDK Infrastructure**: VPC, RDS MySQL, Batch, Lambda, S3, CloudWatch
-- **4 Web Scrapers**: CareerOneStop, CollegeScholarship, General Search, RSS/API
+- **3 Web Scrapers**: CareerOneStop, CollegeScholarship, General Search
 - **AI Processing**: AWS Bedrock integration in TypeScript scrapers
 - **Local Development Environment**: Python virtual environment with local MySQL
 - **Database Migration**: Complete migration from DynamoDB to MySQL
@@ -190,7 +190,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 ### 2.3 Key Features
 
 #### Production Features (TypeScript)
-- **Multi-Source Scraping**: CareerOneStop, CollegeScholarship, General Search, RSS/API
+- **Multi-Source Scraping**: CareerOneStop, CollegeScholarship, General Search
 - **AI-Powered Processing**: AWS Bedrock for intelligent data extraction and categorization
 - **Rate Limiting**: Respectful web scraping with delays
 - **Error Handling**: Robust error recovery and retry mechanisms
