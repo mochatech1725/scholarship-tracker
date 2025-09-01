@@ -126,7 +126,7 @@ class SourceDiscoveryEngine:
             return [SearchQuery(query=query, category=category_id, priority=2) for query in fallback_queries]
     
     def _search_google(self, query: str, max_results: int = 10) -> List[Dict]:
-        """Search Google Custom Search API"""
+        """Search Google Custom Search API with rate limiting and exponential backoff"""
         url = "https://www.googleapis.com/customsearch/v1"
         params = {
             'key': self.google_api_key,
@@ -135,26 +135,61 @@ class SourceDiscoveryEngine:
             'num': min(max_results, 10)  # Google CSE max is 10
         }
         
-        try:
-            response = requests.get(url, params=params)
-            response.raise_for_status()
-            
-            data = response.json()
-            items = data.get('items', [])
-            
-            results = []
-            for item in items:
-                results.append({
-                    'url': item.get('link', ''),
-                    'title': item.get('title', ''),
-                    'description': item.get('snippet', '')
-                })
-            
-            return results
-            
-        except Exception as e:
-            logger.error(f"Error searching Google: {e}")
-            return []
+        max_retries = 3
+        base_delay = 5  # Start with 5 seconds (more conservative)
+        
+        for attempt in range(max_retries):
+            try:
+                # Rate limiting: wait between requests
+                if hasattr(self, '_last_google_request'):
+                    time_since_last = time.time() - self._last_google_request
+                    if time_since_last < 3.0:  # More conservative: 3 seconds between requests
+                        sleep_time = 3.0 - time_since_last
+                        logger.debug(f"Rate limiting: waiting {sleep_time:.2f} seconds")
+                        time.sleep(sleep_time)
+                
+                self._last_google_request = time.time()
+                
+                response = requests.get(url, params=params, timeout=30)
+                
+                # Handle rate limiting specifically
+                if response.status_code == 429:
+                    delay = base_delay * (2 ** attempt)  # Exponential backoff
+                    logger.warning(f"Rate limited by Google API (attempt {attempt + 1}/{max_retries}). Waiting {delay} seconds...")
+                    time.sleep(delay)
+                    continue
+                
+                response.raise_for_status()
+                
+                data = response.json()
+                items = data.get('items', [])
+                
+                results = []
+                for item in items:
+                    results.append({
+                        'url': item.get('link', ''),
+                        'title': item.get('title', ''),
+                        'description': item.get('snippet', '')
+                    })
+                
+                logger.debug(f"Google search successful for query: {query[:50]}...")
+                return results
+                
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:
+                    delay = base_delay * (2 ** attempt)
+                    logger.warning(f"Rate limited by Google API (attempt {attempt + 1}/{max_retries}). Waiting {delay} seconds...")
+                    time.sleep(delay)
+                    continue
+                else:
+                    logger.error(f"HTTP error searching Google: {e}")
+                    return []
+            except Exception as e:
+                logger.error(f"Error searching Google: {e}")
+                return []
+        
+        logger.error(f"Failed to search Google after {max_retries} attempts due to rate limiting")
+        return []
     
     def _verify_sources(self, sources: List[Dict], category_id: str) -> List[DiscoverySource]:
         """Use AI to verify if sources actually offer scholarships"""

@@ -84,6 +84,8 @@ class ScrapingMetadata:
     records_processed: int = 0
     records_inserted: int = 0
     records_updated: int = 0
+    job_id: Optional[str] = None
+    website: Optional[str] = None
     errors: List[str] = None
 
     def __post_init__(self):

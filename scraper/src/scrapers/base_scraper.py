@@ -117,21 +117,59 @@ class BaseScraper(ABC):
         logger.info(f"Starting {self.__class__.__name__}")
         
         try:
+            # Create metadata with job information
+            job_metadata = ScrapingMetadata()
+            job_metadata.job_id = self.job_id
+            website_name = self.__class__.__name__.replace('Scraper', '').lower()
+            job_metadata.website = website_name
+            logger.debug(f"Setting website name: {website_name} for class: {self.__class__.__name__}")
+            
             # Update job status to running
-            self.update_job_status('running', ScrapingMetadata())
+            self.update_job_status('running', job_metadata)
             
             # Perform scraping
             result = self.scrape()
             
+            # Add job information to result metadata
+            if hasattr(result.metadata, '__dict__'):
+                result.metadata.job_id = self.job_id
+                result.metadata.website = self.__class__.__name__.replace('Scraper', '').lower()
+                completed_metadata = result.metadata
+            elif isinstance(result.metadata, dict):
+                result.metadata['job_id'] = self.job_id
+                result.metadata['website'] = self.__class__.__name__.replace('Scraper', '').lower()
+                # Convert dict to ScrapingMetadata object
+                completed_metadata = ScrapingMetadata(
+                    records_found=result.metadata.get('total_found', 0),
+                    records_processed=result.metadata.get('total_processed', 0),
+                    records_inserted=result.metadata.get('total_inserted', 0),
+                    records_updated=result.metadata.get('total_updated', 0),
+                    job_id=result.metadata.get('job_id'),
+                    website=result.metadata.get('website'),
+                    errors=result.metadata.get('errors', [])
+                )
+            else:
+                # Fallback: create basic metadata
+                completed_metadata = ScrapingMetadata(
+                    job_id=self.job_id,
+                    website=self.__class__.__name__.replace('Scraper', '').lower()
+                )
+            
             # Update job status to completed
-            self.update_job_status('completed', result.metadata)
+            self.update_job_status('completed', completed_metadata)
             
             logger.info(f"Scraping completed successfully. Found {len(result.scholarships)} scholarships")
             return result
             
         except Exception as e:
             logger.error(f"Scraping failed: {e}")
-            self.update_job_status('failed', ScrapingMetadata(errors=[str(e)]))
+            
+            # Create metadata with job information for failed status
+            failed_metadata = ScrapingMetadata(errors=[str(e)])
+            failed_metadata.job_id = self.job_id
+            failed_metadata.website = self.__class__.__name__.replace('Scraper', '').lower()
+            
+            self.update_job_status('failed', failed_metadata)
             
             # Return a proper ScrapingResult instead of raising the exception
             return ScrapingResult(
@@ -139,6 +177,8 @@ class BaseScraper(ABC):
                 scholarships=[],
                 errors=[str(e)],
                 metadata={
+                    'job_id': self.job_id,
+                    'website': self.__class__.__name__.replace('Scraper', '').lower(),
                     'total_found': 0,
                     'total_processed': 0,
                     'total_inserted': 0,

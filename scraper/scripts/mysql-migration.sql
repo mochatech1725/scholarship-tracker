@@ -176,4 +176,28 @@ CREATE TABLE IF NOT EXISTS applications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Show applications table structure
-DESCRIBE applications; 
+DESCRIBE applications;
+
+-- Create jobs table for tracking scraping jobs
+CREATE TABLE IF NOT EXISTS jobs (
+    job_id VARCHAR(100) PRIMARY KEY,
+    website VARCHAR(100) NOT NULL,
+    status ENUM('pending', 'running', 'completed', 'failed') DEFAULT 'pending',
+    records_found INT DEFAULT 0,
+    records_processed INT DEFAULT 0,
+    records_inserted INT DEFAULT 0,
+    records_updated INT DEFAULT 0,
+    errors JSON,
+    metadata JSON,
+    started_at TIMESTAMP NULL,
+    completed_at TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_website (website),
+    INDEX idx_status (status),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Show jobs table structure
+DESCRIBE jobs; 

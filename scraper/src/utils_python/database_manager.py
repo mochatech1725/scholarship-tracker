@@ -4,6 +4,7 @@ Database Manager - Abstract database operations for different environments
 """
 
 import os
+import json
 import logging
 import pymysql
 from abc import ABC, abstractmethod
@@ -44,7 +45,9 @@ class DatabaseManager(ABC):
     def get_connection(self):
         """Get database connection"""
         if not self.connection or not self.connection.open:
-            self.connect()
+            if not self.connect():
+                logger.error("Failed to establish database connection")
+                return None
         return self.connection
 
 
@@ -138,8 +141,138 @@ class LocalDatabaseManager(DatabaseManager):
             cursor.close()
     
     def update_job_status(self, status: str, metadata: Any):
-        """Update job status (local mode just logs)"""
-        logger.info(f"Local job status update: {status} - {metadata}")
+        """Update job status in local MySQL database"""
+        logger.debug(f"[LOCAL] Updating job status: {status} with metadata type: {type(metadata)}")
+        if hasattr(metadata, 'website'):
+            logger.debug(f"[LOCAL] Metadata has website attribute: {metadata.website}")
+        elif isinstance(metadata, dict) and 'website' in metadata:
+            logger.debug(f"[LOCAL] Metadata dict has website key: {metadata['website']}")
+        else:
+            logger.debug(f"[LOCAL] No website found in metadata")
+        
+        try:
+            conn = self.get_connection()
+            if not conn:
+                logger.error(f"Failed to get database connection for job status update. Host: {self.host}, Database: {self.database}")
+                return
+        except Exception as e:
+            logger.error(f"Exception getting database connection for job status update: {e}")
+            return
+        
+        cursor = conn.cursor()
+        
+        try:
+            # Extract job_id from metadata if available
+            job_id = getattr(metadata, 'job_id', None) if hasattr(metadata, 'job_id') else None
+            if not job_id:
+                # Generate a job_id if not provided
+                job_id = f"local_{int(datetime.now().timestamp())}"
+            
+            # Extract website name from metadata or use default
+            if hasattr(metadata, 'website') and metadata.website:
+                website = metadata.website
+            elif isinstance(metadata, dict) and metadata.get('website'):
+                website = metadata['website']
+            else:
+                # Fallback: try to extract from class name or use default
+                website = 'unknown'
+                if hasattr(metadata, '__class__') and hasattr(metadata.__class__, '__name__'):
+                    class_name = metadata.__class__.__name__
+                    if 'Scraper' in class_name:
+                        website = class_name.replace('Scraper', '').lower()
+            
+            # Convert metadata to JSON-serializable format
+            metadata_dict = {}
+            if hasattr(metadata, '__dict__'):
+                metadata_dict = {k: v for k, v in metadata.__dict__.items() if v is not None}
+            elif isinstance(metadata, dict):
+                metadata_dict = metadata
+            
+            # Prepare errors as JSON
+            errors_json = None
+            if hasattr(metadata, 'errors') and metadata.errors:
+                errors_json = json.dumps(metadata.errors)
+            
+            # Check if job exists
+            cursor.execute("SELECT job_id FROM jobs WHERE job_id = %s", (job_id,))
+            job_exists = cursor.fetchone()
+            
+            if job_exists:
+                # Update existing job
+                if status == 'running':
+                    query = """
+                        UPDATE jobs SET 
+                        status = %s, 
+                        started_at = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                        WHERE job_id = %s
+                    """
+                    cursor.execute(query, (status, datetime.now(), job_id))
+                elif status in ['completed', 'failed']:
+                    query = """
+                        UPDATE jobs SET 
+                        status = %s,
+                        records_found = %s,
+                        records_processed = %s,
+                        records_inserted = %s,
+                        records_updated = %s,
+                        errors = %s,
+                        metadata = %s,
+                        completed_at = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                        WHERE job_id = %s
+                    """
+                    cursor.execute(query, (
+                        status,
+                        metadata_dict.get('records_found', 0),
+                        metadata_dict.get('records_processed', 0),
+                        metadata_dict.get('records_inserted', 0),
+                        metadata_dict.get('records_updated', 0),
+                        errors_json,
+                        json.dumps(metadata_dict),
+                        datetime.now(),
+                        job_id
+                    ))
+                else:
+                    query = """
+                        UPDATE jobs SET 
+                        status = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                        WHERE job_id = %s
+                    """
+                    cursor.execute(query, (status, job_id))
+            else:
+                # Insert new job
+                query = """
+                    INSERT INTO jobs (
+                        job_id, website, status, records_found, records_processed, 
+                        records_inserted, records_updated, errors, metadata, 
+                        started_at, created_at, updated_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    )
+                """
+                cursor.execute(query, (
+                    job_id,
+                    website,
+                    status,
+                    metadata_dict.get('records_found', 0),
+                    metadata_dict.get('records_processed', 0),
+                    metadata_dict.get('records_inserted', 0),
+                    metadata_dict.get('records_updated', 0),
+                    errors_json,
+                    json.dumps(metadata_dict),
+                    datetime.now() if status == 'running' else None
+                ))
+            
+            conn.commit()
+            logger.info(f"Job status updated in local DB: {job_id} - {status} - Website: {website}")
+            
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"Failed to update job status in local DB: {e}")
+        finally:
+            cursor.close()
     
     def _create_scholarship_id(self) -> str:
         """Generate a unique scholarship ID"""
@@ -237,9 +370,130 @@ class ProductionDatabaseManager(DatabaseManager):
             cursor.close()
     
     def update_job_status(self, status: str, metadata: Any):
-        """Update job status (production mode would update job tracking system)"""
-        logger.info(f"Production job status update: {status} - {metadata}")
-        # In a real implementation, this would update a job tracking system
+        """Update job status in production MySQL database"""
+        try:
+            conn = self.get_connection()
+            if not conn:
+                logger.error(f"Failed to get database connection for job status update. Host: {self.host}, Database: {self.database}")
+                return
+        except Exception as e:
+            logger.error(f"Exception getting database connection for job status update: {e}")
+            return
+        
+        cursor = conn.cursor()
+        
+        try:
+            # Extract job_id from metadata if available
+            job_id = getattr(metadata, 'job_id', None) if hasattr(metadata, 'job_id') else None
+            if not job_id:
+                # Generate a job_id if not provided
+                job_id = f"prod_{int(datetime.now().timestamp())}"
+            
+            # Extract website name from metadata or use default
+            if hasattr(metadata, 'website') and metadata.website:
+                website = metadata.website
+            elif isinstance(metadata, dict) and metadata.get('website'):
+                website = metadata['website']
+            else:
+                # Fallback: try to extract from class name or use default
+                website = 'unknown'
+                if hasattr(metadata, '__class__') and hasattr(metadata.__class__, '__name__'):
+                    class_name = metadata.__class__.__name__
+                    if 'Scraper' in class_name:
+                        website = class_name.replace('Scraper', '').lower()
+            
+            # Convert metadata to JSON-serializable format
+            metadata_dict = {}
+            if hasattr(metadata, '__dict__'):
+                metadata_dict = {k: v for k, v in metadata.__dict__.items() if v is not None}
+            elif isinstance(metadata, dict):
+                metadata_dict = metadata
+            
+            # Prepare errors as JSON
+            errors_json = None
+            if hasattr(metadata, 'errors') and metadata.errors:
+                errors_json = json.dumps(metadata.errors)
+            
+            # Check if job exists
+            cursor.execute("SELECT job_id FROM jobs WHERE job_id = %s", (job_id,))
+            job_exists = cursor.fetchone()
+            
+            if job_exists:
+                # Update existing job
+                if status == 'running':
+                    query = """
+                        UPDATE jobs SET 
+                        status = %s, 
+                        started_at = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                        WHERE job_id = %s
+                    """
+                    cursor.execute(query, (status, datetime.now(), job_id))
+                elif status in ['completed', 'failed']:
+                    query = """
+                        UPDATE jobs SET 
+                        status = %s,
+                        records_found = %s,
+                        records_processed = %s,
+                        records_inserted = %s,
+                        records_updated = %s,
+                        errors = %s,
+                        metadata = %s,
+                        completed_at = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                        WHERE job_id = %s
+                    """
+                    cursor.execute(query, (
+                        status,
+                        metadata_dict.get('records_found', 0),
+                        metadata_dict.get('records_processed', 0),
+                        metadata_dict.get('records_inserted', 0),
+                        metadata_dict.get('records_updated', 0),
+                        errors_json,
+                        json.dumps(metadata_dict),
+                        datetime.now(),
+                        job_id
+                    ))
+                else:
+                    query = """
+                        UPDATE jobs SET 
+                        status = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                        WHERE job_id = %s
+                    """
+                    cursor.execute(query, (status, job_id))
+            else:
+                # Insert new job
+                query = """
+                    INSERT INTO jobs (
+                        job_id, website, status, records_found, records_processed, 
+                        records_inserted, records_updated, errors, metadata, 
+                        started_at, created_at, updated_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                    )
+                """
+                cursor.execute(query, (
+                    job_id,
+                    website,
+                    status,
+                    metadata_dict.get('records_found', 0),
+                    metadata_dict.get('records_processed', 0),
+                    metadata_dict.get('records_inserted', 0),
+                    metadata_dict.get('records_updated', 0),
+                    errors_json,
+                    json.dumps(metadata_dict),
+                    datetime.now() if status == 'running' else None
+                ))
+            
+            conn.commit()
+            logger.info(f"Job status updated in production DB: {job_id} - {status}")
+            
+        except Exception as e:
+            conn.rollback()
+            logger.error(f"Failed to update job status in production DB: {e}")
+        finally:
+            cursor.close()
     
     def _create_scholarship_id(self) -> str:
         """Generate a unique scholarship ID"""

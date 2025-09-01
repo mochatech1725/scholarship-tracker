@@ -247,6 +247,46 @@ class EthicalCrawler:
             'Upgrade-Insecure-Requests': '1'
         })
     
+    def crawl_url(self, url: str) -> Dict[str, Any]:
+        """Crawl a single URL and return content"""
+        logger.info(f"Crawling single URL: {url}")
+        
+        try:
+            # Parse URL to get domain
+            parsed_url = urlparse(url)
+            domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            
+            # Check robots.txt if not already done
+            if self.config.respect_robots_txt and domain not in self.domain_rules:
+                self.domain_rules[domain] = self.robots_parser.fetch_and_parse(domain)
+            
+            # Check if allowed by robots.txt
+            if self.config.respect_robots_txt and domain in self.domain_rules:
+                if not self.robots_parser.can_fetch(url, self.domain_rules[domain]):
+                    logger.warning(f"Robots.txt disallows crawling {url}")
+                    return {'success': False, 'reason': 'robots_txt_disallows'}
+            
+            # Respect crawl delay
+            self._respect_crawl_delay(domain)
+            
+            # Crawl the single page
+            result = self._crawl_page(url)
+            
+            if result['success']:
+                return {
+                    'success': True,
+                    'content': result.get('content', ''),
+                    'title': result.get('title', ''),
+                    'links': result.get('links', []),
+                    'scholarship_data': result.get('scholarship_data', [])
+                }
+            else:
+                return result
+                
+        except Exception as e:
+            logger.error(f"Error crawling URL {url}: {e}")
+            return {'success': False, 'reason': str(e)}
+    
     def crawl_domain(self, start_url: str, max_pages: int = None) -> Dict[str, Any]:
         """Crawl a domain for scholarship opportunities"""
         if max_pages is None:

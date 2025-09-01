@@ -1,37 +1,47 @@
 # Scholarship Scraper Technical Architecture
 
+## Overview
+
+The Scholarship Scraper is a Python-based system designed to collect scholarship information from various web sources. It operates as a local/on-premises solution with MySQL database storage and can be deployed to various environments (local, dev, staging, production).
+
 ## Detailed Architecture Components
 
-### 1. Infrastructure (CDK)
+### 1. Infrastructure
 
-- **VPC**: Private network for Batch jobs with NAT Gateway for internet access
-- **S3 Bucket**: `scholarship-raw-data-{environment}-{account}` for storing raw scraping data
-- **MySQL Tables**: 
-  - `scholarship-scholarships-{environment}`: Stores processed scholarship data with multiple GSIs
-  - `scholarship-jobs-{environment}`: Tracks scraping job metadata
-  - `scholarship-websites-{environment}`: Stores website configurations
-- **IAM Roles & Policies**: Secure access to AWS services including S3 and RDS MySQL
-- **CloudWatch**: Logging and monitoring with Container Insights V2
+- **Local Development**: MySQL database running locally or via Docker
+- **Production**: MySQL database (RDS or on-premises)
+- **Storage**: Local file system for raw data and logs
+- **Environment Support**: Local, dev, staging, and production configurations
 
-### 2. Scheduling & Orchestration
+### 2. Database Architecture
 
-- **EventBridge**: Triggers scraping jobs every hour
-- **Lambda (Job Orchestrator)**: Coordinates batch job submissions by reading from MySQL websites table
-- **AWS Batch**: Runs containerized scraping jobs on Fargate
+- **MySQL Database**: Centralized storage for all scholarship data
+- **Tables**:
+  - `scholarships`: Stores processed scholarship data with comprehensive fields
+  - `jobs`: Tracks scraping job metadata and status
+  - `websites`: Stores website configurations and scraper settings
+  - `applications`: User scholarship applications (if using the full system)
 
-### 3. Data Sources
+### 3. Scheduling & Orchestration
 
-#### Web Crawling
-- **CareerOneStop**: Web crawling for CareerOneStop.org
-- **CollegeScholarship**:  Web crawling for CollegeScholarships.com
-- **GumLoop**: AI-powered web crawling for known scholarship sites
-- **GumLoop Discovery**: Intelligent discovery crawling for new opportunities
-- **General Search**: Uses OpenAI AI to intelligently search and extract data
+- **Manual Execution**: Command-line interface for running scrapers
+- **Batch Processing**: Support for running multiple scrapers sequentially
+- **Job Tracking**: Comprehensive job status tracking in the database
+- **Error Handling**: Robust error handling with retry mechanisms
 
-### 4. Data Processing
+### 4. Data Sources
 
-- **Raw Data Storage**: S3 for HTML, JSON, and API responses
-- **AI Processing**: OpenAI for intelligent data extraction
+#### Web Scraping
+- **CareerOneStop**: Web crawling for CareerOneStop.org using BeautifulSoup
+- **CollegeScholarship**: Web crawling for CollegeScholarships.com
+- **General Scraper**: AI-powered intelligent search and extraction
+- **AI Discovery**: OpenAI-powered discovery of new scholarship sources
+- **Ethical Crawler**: Respectful web crawling with robots.txt compliance
+
+### 5. Data Processing
+
+- **Raw Data Storage**: Local file system for HTML, JSON, and API responses
+- **AI Processing**: OpenAI integration for intelligent data extraction
 - **Deduplication**: MD5 hash-based duplicate detection
 - **Data Parsing**: Intelligent extraction of scholarship details
 - **Validation**: Ensures data quality before storage
@@ -39,89 +49,73 @@
 ## Raw Data Storage Structure
 
 ```
-s3://scholarship-raw-data-{env}-{account}/
+./raw_data/
 ├── CareerOneStopScraper/
 │   ├── 2024/01/15/
 │   │   ├── 2024-01-15T10-30-00-123Z-abc12345.html
 │   │   └── 2024-01-15T10-30-00-123Z-abc12345-metadata.json
-├── GumLoopScraper/
+├── GeneralScraper/
 │   └── 2024/01/15/
 │       ├── 2024-01-15T10-35-00-456Z-def67890.json
 │       └── 2024-01-15T10-35-00-456Z-def67890-metadata.json
-└── GumLoopDiscoveryScraper/
+└── AIDiscoveryScraper/
     └── 2024/01/15/
         └── ...
 ```
 
 ## Website Configuration Management
 
+The system uses a MySQL-based configuration system that allows:
+- Runtime enabling/disabling of scrapers
+- Configuration updates without code changes
+- Centralized management of all scraper settings
+
 ## Deduplication Strategy
 
-1. **ID Generation**: MD5 hash of scholarship name + organization + deadline
+1. **ID Generation**: MD5 hash of scholarship title + organization
 2. **Duplicate Check**: Query MySQL before insertion
-3. **Update Logic**: Only insert if not exists, track updates separately
+3. **Update Logic**: Upsert pattern - insert if new, update if exists
+4. **In-Memory Deduplication**: Remove duplicates before database operations
 
 ## Security Considerations
 
-- **IAM Roles**: Least privilege access to S3 and RDS MySQL
-- **VPC**: Private subnets for Batch jobs
-- **S3 Encryption**: Server-side encryption enabled
-- **RDS MySQL Encryption**: Server-side encryption enabled
-- **Secrets**: Environment variables for API keys
-- **User Agent**: Respectful web scraping headers
+- **Environment Variables**: Secure storage of API keys and database credentials
+- **Database Security**: MySQL user authentication and access control
+- **Rate Limiting**: Respectful web scraping with configurable delays
+- **Robots.txt Compliance**: Ethical crawling practices
+- **User Agent**: Transparent identification as ScholarshipBot
 
 ## Monitoring & Observability
 
-- **CloudWatch Logs**: Application and infrastructure logs
-- **Container Insights V2**: Enhanced ECS monitoring
-- **S3 Metrics**: Storage usage and access patterns
-- **RDS MySQL Metrics**: Database performance and usage
-- **Batch Job Status**: Job success/failure tracking
-- **Custom Metrics**: Scholarships found, processed, inserted
+- **Structured Logging**: Comprehensive logging with different levels
+- **Job Tracking**: Database-based job status and metadata tracking
+- **Error Handling**: Detailed error logging and reporting
+- **Performance Metrics**: Processing time, success rates, and error counts
+- **Database Monitoring**: Connection status and query performance
 
 ## Scaling Considerations
 
-- **Batch Jobs**: Parallel execution per website
-- **S3**: Unlimited storage with automatic scaling
-- **RDS MySQL**: On-demand billing for variable load
-- **Fargate**: Serverless container scaling
-- **Lambda**: Automatic scaling for job orchestration
-- **Website Config**: No size limitations, efficient querying
+- **Sequential Processing**: Scrapers run sequentially to avoid overwhelming sources
+- **Configurable Delays**: Adjustable rate limiting between requests
+- **Database Connection Pooling**: Efficient database connection management
+- **Memory Management**: Process scholarships in batches to manage memory usage
+- **Error Recovery**: Automatic retry mechanisms with exponential backoff
 
 ## Cost Optimization
 
-- **S3**: Cost-effective storage for raw data with lifecycle policies
-- **RDS MySQL**: On-demand billing initially, provisioned for predictable loads
-- **Batch**: Spot instances for cost savings
-- **Lambda**: Pay per execution
-- **EventBridge**: Minimal cost for scheduling
-- **Container Insights V2**: Lower CloudWatch costs
+- **Local Storage**: No cloud storage costs for raw data
+- **Database Optimization**: Efficient MySQL queries and indexing
+- **Rate Limiting**: Prevents API quota exhaustion
+- **Resource Management**: Configurable limits on concurrent operations
+- **Efficient Processing**: Batch operations and optimized data structures
 
-## Benefits of Hybrid Storage
+## Benefits of Current Architecture
 
-1. **Cost Efficiency**: S3 is much cheaper for large raw data storage
-2. **Performance**: MySQL optimized for fast application queries
-3. **Scalability**: S3 handles unlimited raw data growth
-4. **Flexibility**: Raw data available for reprocessing and analytics
-5. **Compliance**: Data lifecycle management with S3 policies
-6. **Configuration Management**: Runtime updates without redeployment
+1. **Simplicity**: Easy to understand and maintain
+2. **Flexibility**: Can run locally or deploy to any environment
+3. **Cost Effective**: No ongoing cloud service costs
+4. **Full Control**: Complete control over data and processing
+5. **Easy Deployment**: Simple Python application with MySQL dependency
+6. **Scalability**: Can scale horizontally by running multiple instances
 
-## Benefits of MySQL Configuration
-
-1. **No Size Limits**: Can handle thousands of website configurations
-2. **Runtime Updates**: Enable/disable websites without redeployment
-3. **Better Performance**: Fast reads from MySQL vs S3 downloads
-4. **Efficient Querying**: Filter enabled websites, query by type
-5. **Scalability**: No configuration file size limitations
-6. **Cost Effective**: Pay-per-request billing for small tables
-
-## Future Enhancements
-
-1. **API Gateway**: REST API for querying scholarships
-2. **Elasticsearch**: Advanced search capabilities
-3. **SNS/SQS**: Asynchronous processing
-4. **CloudFront**: Caching for API responses
-5. **WAF**: Web application firewall for API protection
-6. **Athena**: SQL queries on S3 raw data
-7. **Glue**: ETL processing for raw data analytics
-8. **Web UI**: Admin interface for managing website configurations 
+ 

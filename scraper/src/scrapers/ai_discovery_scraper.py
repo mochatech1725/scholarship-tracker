@@ -7,13 +7,16 @@ Integrates ethical crawling, AI-powered source discovery, and content extraction
 import os
 import time
 import logging
+import hashlib
 from typing import List, Dict, Optional
 from dataclasses import dataclass
+from datetime import datetime
 from .base_scraper import BaseScraper
 from .ethical_crawler import EthicalCrawler, CrawlConfig
 from .source_discovery_engine import SourceDiscoveryEngine
 from .content_extraction_pipeline import ContentExtractionPipeline, ExtractedScholarship
 from .config.config_loader import SourceCategoryConfig
+from ..utils_python import ScrapingResult, Scholarship
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +37,10 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
                  openai_api_key: str,
                  google_api_key: str,
                  google_cse_id: str,
-                 max_sources_per_category: int = 10,
-                 max_scholarships_per_source: int = 5):
+                 max_sources_per_category: int = 5,  # Reduced from 10
+                 max_scholarships_per_source: int = 3,  # Reduced from 5
+                 conservative_rate_limiting: bool = True,
+                 max_google_requests: int = 20):  # Limit total Google API calls
         
         super().__init__()
         
@@ -53,6 +58,19 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
         # Configuration
         self.max_sources_per_category = max_sources_per_category
         self.max_scholarships_per_source = max_scholarships_per_source
+        self.conservative_rate_limiting = conservative_rate_limiting
+        self.max_google_requests = max_google_requests
+        self.google_requests_made = 0  # Track Google API calls
+        
+        # Rate limiting delays
+        if self.conservative_rate_limiting:
+            self.category_delay = 30  # 30 seconds between categories (very conservative)
+            self.crawl_delay = 10     # 10 seconds between crawls
+            self.extraction_delay = 5 # 5 seconds between extractions
+        else:
+            self.category_delay = 15  # 15 seconds between categories
+            self.crawl_delay = 8      # 8 seconds between crawls
+            self.extraction_delay = 3 # 3 seconds between extractions
         
         # Statistics
         self.stats = DiscoveryStats(
@@ -64,35 +82,104 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
             scholarships_by_category={}
         )
     
-    def scrape(self, categories: Optional[List[str]] = None) -> List[ExtractedScholarship]:
+    def scrape(self, categories: Optional[List[str]] = None) -> ScrapingResult:
         """Main scraping method - discover sources and extract scholarships"""
         
         start_time = time.time()
         logger.info("Starting enhanced AI discovery scraper")
         
-        # Stage 1: Discovery
-        logger.info("Stage 1: Discovering scholarship sources...")
-        discovered_sources = self._discover_sources(categories)
-        
-        # Stage 2: Crawling
-        logger.info("Stage 2: Crawling discovered sources...")
-        crawled_pages = self._crawl_sources(discovered_sources)
-        
-        # Stage 3: Extraction
-        logger.info("Stage 3: Extracting scholarship data...")
-        extracted_scholarships = self._extract_scholarships(crawled_pages)
-        
-        # Stage 4: Processing and saving
-        logger.info("Stage 4: Processing and saving scholarships...")
-        self._process_scholarships(extracted_scholarships)
-        
-        # Update statistics
-        self.stats.processing_time = time.time() - start_time
-        self.stats.total_sources_discovered = len(discovered_sources)
-        self.stats.total_scholarships_extracted = len(extracted_scholarships)
-        
-        logger.info(f"Scraping complete: {len(extracted_scholarships)} scholarships extracted")
-        return extracted_scholarships
+        try:
+            # Stage 1: Discovery
+            logger.info("Stage 1: Discovering scholarship sources...")
+            discovered_sources = self._discover_sources(categories)
+            
+            # Stage 2: Crawling
+            logger.info("Stage 2: Crawling discovered sources...")
+            crawled_pages = self._crawl_sources(discovered_sources)
+            
+            # Stage 3: Extraction
+            logger.info("Stage 3: Extracting scholarship data...")
+            extracted_scholarships = self._extract_scholarships(crawled_pages)
+            
+            # Stage 4: Processing and saving
+            logger.info("Stage 4: Processing and saving scholarships...")
+            inserted = 0
+            updated = 0
+            errors = []
+            
+            for scholarship in extracted_scholarships:
+                try:
+                    if self.save_scholarship(scholarship):
+                        inserted += 1
+                    else:
+                        updated += 1
+                except Exception as e:
+                    error_msg = f"Error saving scholarship {scholarship.title}: {str(e)}"
+                    errors.append(error_msg)
+                    logger.error(error_msg)
+            
+            # Update statistics
+            self.stats.processing_time = time.time() - start_time
+            self.stats.total_sources_discovered = len(discovered_sources)
+            self.stats.total_scholarships_extracted = len(extracted_scholarships)
+            
+            logger.info(f"Scraping complete: {len(extracted_scholarships)} scholarships extracted")
+            
+            # Convert ExtractedScholarship objects to Scholarship objects
+            scholarships = []
+            for extracted_scholarship in extracted_scholarships:
+                scholarship = Scholarship(
+                    scholarship_id=self._generate_scholarship_id(extracted_scholarship.title, extracted_scholarship.organization or "Unknown"),
+                    title=extracted_scholarship.title,
+                    description=extracted_scholarship.description,
+                    organization=extracted_scholarship.organization,
+                    min_award=extracted_scholarship.amount,
+                    max_award=extracted_scholarship.amount,
+                    deadline=extracted_scholarship.deadline,
+                    eligibility=extracted_scholarship.eligibility,
+                    apply_url=extracted_scholarship.application_url,
+                    url=extracted_scholarship.source_url,
+                    source="AI Discovery",
+                    country="US",
+                    active=True,
+                    created_at=datetime.now(),
+                    updated_at=datetime.now()
+                )
+                scholarships.append(scholarship)
+            
+            return ScrapingResult(
+                success=True,
+                scholarships=scholarships,
+                errors=errors,
+                metadata={
+                    'total_found': len(extracted_scholarships),
+                    'total_processed': len(extracted_scholarships),
+                    'total_inserted': inserted,
+                    'total_updated': updated,
+                    'processing_time': self.stats.processing_time,
+                    'sources_discovered': self.stats.total_sources_discovered,
+                    'categories_searched': self.stats.categories_searched
+                }
+            )
+            
+        except Exception as e:
+            error_msg = f"AI discovery scraper failed: {str(e)}"
+            logger.error(error_msg)
+            
+            return ScrapingResult(
+                success=False,
+                scholarships=[],
+                errors=[error_msg],
+                metadata={
+                    'total_found': 0,
+                    'total_processed': 0,
+                    'total_inserted': 0,
+                    'total_updated': 0,
+                    'processing_time': time.time() - start_time,
+                    'sources_discovered': 0,
+                    'categories_searched': 0
+                }
+            )
     
     def _discover_sources(self, categories: Optional[List[str]] = None) -> List:
         """Discover scholarship sources using AI-powered discovery engine"""
@@ -106,11 +193,19 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
         all_sources = []
         
         for category_id in categories:
+            # Check Google API quota before each category
+            if not self._check_google_quota():
+                logger.warning(f"Stopping discovery due to Google API quota limit. Processed {len(all_sources)} sources so far.")
+                break
+                
             try:
                 sources = self.discovery_engine.discover_sources(
                     categories=[category_id],
                     max_sources_per_category=self.max_sources_per_category
                 )
+                
+                # Increment Google API request counter
+                self._increment_google_requests()
                 
                 all_sources.extend(sources)
                 self.stats.sources_by_category[category_id] = len(sources)
@@ -118,7 +213,7 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
                 logger.info(f"Discovered {len(sources)} sources for {category_id}")
                 
                 # Rate limiting between categories
-                time.sleep(2)
+                time.sleep(self.category_delay)
                 
             except Exception as e:
                 logger.error(f"Error discovering sources for {category_id}: {e}")
@@ -148,7 +243,7 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
                     })
                 
                 # Rate limiting
-                time.sleep(1)
+                time.sleep(self.crawl_delay)
                 
             except Exception as e:
                 logger.error(f"Error crawling {source.url}: {e}")
@@ -182,13 +277,30 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
                     self.stats.scholarships_by_category[category] += len(extraction_result.scholarships)
                 
                 # Rate limiting
-                time.sleep(0.5)
+                time.sleep(self.extraction_delay)
                 
             except Exception as e:
                 logger.error(f"Error extracting scholarships from {page['url']}: {e}")
                 continue
         
         return all_scholarships
+    
+    def _check_google_quota(self) -> bool:
+        """Check if we can make more Google API requests"""
+        if self.google_requests_made >= self.max_google_requests:
+            logger.warning(f"Reached maximum Google API requests ({self.max_google_requests}). Stopping discovery.")
+            return False
+        return True
+    
+    def _increment_google_requests(self):
+        """Increment Google API request counter"""
+        self.google_requests_made += 1
+        logger.debug(f"Google API requests made: {self.google_requests_made}/{self.max_google_requests}")
+    
+    def _generate_scholarship_id(self, title: str, organization: str) -> str:
+        """Generate a unique scholarship ID"""
+        content = f"{title}-{organization}".lower()
+        return hashlib.md5(content.encode()).hexdigest()[:16]
     
     def _process_scholarships(self, scholarships: List[ExtractedScholarship]):
         """Process and save extracted scholarships"""
