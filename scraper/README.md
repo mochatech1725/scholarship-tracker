@@ -364,13 +364,6 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-#### 4. Import Errors
-**Error:** `attempted relative import beyond top-level package`
-
-**Solution:**
-- Use the main.py approach: `python3 main.py --scraper ai_discovery`
-- Don't run individual modules directly
-
 ### Cost Estimates
 
 #### OpenAI API

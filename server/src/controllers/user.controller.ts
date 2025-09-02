@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getKnex } from '../config/knex.config.js';
+import { getKnex } from '../config/database.config.js';
 import { User } from '../shared-types/user.types.js';
 import { UserSearchPreferences } from '../shared-types/user-search-preferences.types.js';
 
@@ -9,22 +9,22 @@ export const getUsers = async (req: Request, res: Response) => {
     const users = await knex<User>('users')
       .select('*')
       .orderBy('created_at', 'desc');
-    
+
     // Fetch search preferences for each user
     const usersWithPreferences = await Promise.all(
       users.map(async (user) => {
         const searchPreferences = await knex<UserSearchPreferences>('user_search_preferences')
           .select('*')
-          .where({ student_id: user.user_id }) 
+          .where({ student_id: user.user_id })
           .first();
-        
+
         return {
           ...user,
           searchPreferences: searchPreferences || null
         };
       })
     );
-    
+
     res.json(usersWithPreferences);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -35,7 +35,7 @@ export const getUsers = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
   try {
     const auth0User = req.auth?.payload;
-    
+
     if (!auth0User) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
@@ -80,22 +80,22 @@ export const getUserById = async (req: Request, res: Response) => {
       .select('*')
       .where({ auth_user_id: req.params.auth_user_id })
       .first();
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     // Fetch search preferences for the user
     const searchPreferences = await knex<UserSearchPreferences>('user_search_preferences')
       .select('*')
       .where({ student_id: user.user_id })
       .first();
-    
+
     const userWithPreferences = {
       ...user,
       searchPreferences: searchPreferences || null
     };
-    
+
     res.json(userWithPreferences);
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -110,22 +110,22 @@ export const getByStudentId = async (req: Request, res: Response) => {
       .select('*')
       .where({ user_id: parseInt(req.params.student_id) })
       .first();
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    
+
     // Fetch search preferences for the user
     const searchPreferences = await knex<UserSearchPreferences>('user_search_preferences')
       .select('*')
       .where({ student_id: parseInt(req.params.student_id) })
       .first();
-    
+
     const userWithPreferences = {
       ...user,
       searchPreferences: searchPreferences || null
     };
-    
+
     res.json(userWithPreferences);
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -136,13 +136,13 @@ export const getByStudentId = async (req: Request, res: Response) => {
 export const saveUserProfile = async (req: Request, res: Response) => {
   try {
     const knex = getKnex();
-    
+
     // First, get the user to find their user_id
     const user = await knex<User>('users')
       .select('user_id')
       .where({ auth_user_id: req.params.userId })
       .first();
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -177,12 +177,12 @@ export const saveUserProfile = async (req: Request, res: Response) => {
           .insert(searchPreferencesData);
       }
     }
-    
+
     // Update user's updated_at timestamp
     await knex<User>('users')
       .where({ auth_user_id: req.params.userId })
       .update({ updated_at: new Date() });
-    
+
     // Get updated user with search preferences
     const updatedUser = await knex<User>('users')
       .select('*')
@@ -193,12 +193,12 @@ export const saveUserProfile = async (req: Request, res: Response) => {
       .select('*')
       .where({ student_id: user.user_id })
       .first();
-    
+
     const userWithPreferences = {
       ...updatedUser,
       searchPreferences: searchPreferences || null
     };
-    
+
     res.json(userWithPreferences);
   } catch (error) {
     console.error('Error updating user profile:', error);
@@ -209,19 +209,19 @@ export const saveUserProfile = async (req: Request, res: Response) => {
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
     const auth0User = req.auth?.payload;
-    
+
     if (!auth0User) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
     const knex = getKnex();
-    
+
     // Get user
     const user = await knex<User>('users')
       .select('*')
       .where({ auth_user_id: auth0User.sub })
       .first();
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -234,10 +234,10 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
     // Calculate statistics
     const totalApplications = applications.length;
-    const pendingApplications = applications.filter(app => 
+    const pendingApplications = applications.filter(app =>
       app.status === 'Not Started' || app.status === 'In Progress'
     ).length;
-    const submittedApplications = applications.filter(app => 
+    const submittedApplications = applications.filter(app =>
       app.status === 'Submitted' || app.status === 'Awarded' || app.status === 'Not Awarded'
     ).length;
     const totalValue = applications.reduce((sum, app) => sum + (app.max_award || 0), 0);
@@ -245,12 +245,12 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     // Get upcoming deadlines (next 30 days)
     const now = new Date();
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    
+
     const upcomingDeadlines = applications
       .filter(app => {
         const dueDate = new Date(app.due_date);
-        return dueDate >= now && dueDate <= thirtyDaysFromNow && 
-               (app.status === 'Not Started' || app.status === 'In Progress');
+        return dueDate >= now && dueDate <= thirtyDaysFromNow &&
+          (app.status === 'Not Started' || app.status === 'In Progress');
       })
       .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
       .slice(0, 5);

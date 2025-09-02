@@ -1,28 +1,28 @@
 import { Request, Response } from 'express';
-import { getKnex } from '../config/knex.config.js';
+import { getKnex } from '../config/database.config.js';
 import { User } from '../shared-types/user.types.js';
 import { UserSearchPreferences } from '../shared-types/user-search-preferences.types.js';
 
 export const login = async (req: Request, res: Response) => {
   console.log('login called');
-  
+
   try {
     // The user is already authenticated via Auth0 middleware
     const auth0User = req.auth?.payload;
-    
+
     if (!auth0User) {
       console.log('No auth0User found, returning 401');
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
     const knex = getKnex();
-    
+
     // Find user in our database based on Auth0 sub
     const user = await knex<User>('users').where('auth_user_id', auth0User.sub).first();
 
     if (!user) {
       console.log('No user found for auth0Id:', auth0User.sub, '- returning 404');
-      return res.status(404).json({ 
+      return res.status(404).json({
         message: 'User not found. Please register first.',
         error: 'USER_NOT_FOUND'
       });
@@ -54,7 +54,7 @@ export const logout = async (req: Request, res: Response) => {
   try {
     // With JWT authentication, logout is handled client-side
     // The client should discard the JWT token
-    res.json({ 
+    res.json({
       message: 'Logged out successfully',
       note: 'Please discard your JWT token on the client side'
     });
@@ -67,7 +67,7 @@ export const logout = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
   try {
     const auth0User = req.auth?.payload;
-    
+
     if (!auth0User) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
