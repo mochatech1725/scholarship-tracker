@@ -330,14 +330,12 @@ import { useAuthStore } from 'stores/auth.store'
 import { useUserStore } from 'stores/user.store'
 import { useApplicationStore } from 'stores/application.store'
 import { useQuasar } from 'quasar'
-import { useRoute } from 'vue-router'
 import type { Application } from 'src/shared-types'
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
 const applicationStore = useApplicationStore()
 const $q = useQuasar()
-const route = useRoute()
 const isReady = ref(false)
 const mobileMenu = ref(false)
 const isLoading = ref(false)
