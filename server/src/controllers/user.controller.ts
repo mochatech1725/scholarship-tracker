@@ -15,7 +15,7 @@ export const getUsers = async (req: Request, res: Response) => {
       users.map(async (user) => {
         const searchPreferences = await knex<UserSearchPreferences>('user_search_preferences')
           .select('*')
-          .where({ user_id: user.user_id })
+          .where('user_id', user.user_id)
           .first();
 
         return {
@@ -88,7 +88,7 @@ export const getUserById = async (req: Request, res: Response) => {
     // Fetch search preferences for the user
     const searchPreferences = await knex<UserSearchPreferences>('user_search_preferences')
       .select('*')
-      .where({ user_id: user.user_id })
+      .where('user_id', user.user_id)
       .first();
 
     const userWithPreferences = {
@@ -108,7 +108,7 @@ export const getByUserId = async (req: Request, res: Response) => {
     const knex = getKnex();
     const user = await knex<User>('users')
       .select('*')
-      .where({ user_id: req.params.user_id })
+      .where('user_id', req.params.user_id)
       .first();
 
     if (!user) {
@@ -118,7 +118,7 @@ export const getByUserId = async (req: Request, res: Response) => {
     // Fetch search preferences for the user
     const searchPreferences = await knex<UserSearchPreferences>('user_search_preferences')
       .select('*')
-      .where({ user_id: parseInt(req.params.user_id) })
+      .where('user_id', parseInt(req.params.user_id))
       .first();
 
     const userWithPreferences = {
@@ -191,7 +191,7 @@ export const saveUserProfile = async (req: Request, res: Response) => {
 
     const searchPreferences = await knex<UserSearchPreferences>('user_search_preferences')
       .select('*')
-      .where({ user_id: user.user_id })
+      .where('user_id', user.user_id)
       .first();
 
     const userWithPreferences = {
@@ -229,7 +229,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
     // Get all applications for the user
     const applications = await knex('applications')
       .select('*')
-      .where({ user_id: user.user_id })
+      .where('user_id', user.user_id)
       .orderBy('due_date', 'asc');
 
     // Calculate statistics

@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.get('/', getAll);
 router.get('/:application_id', getById);
-router.get('/getByUserId/:user_id', getByUserId);
+router.get('/user/:user_id', getByUserId);
 router.post('/create', create);
 router.post('/update/:application_id', update);
 router.delete('/delete/:application_id', deleteApplication);

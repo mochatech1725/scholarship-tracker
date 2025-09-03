@@ -112,14 +112,14 @@ class ApiService {
     })
   }
   async getApplicationsByUserId(auth_user_id: string) {
-    return this.makeRequest(`/api/applications/getByUserId/${auth_user_id}`)
+    return this.makeRequest(`/api/applications/user/${auth_user_id}`)
   }
 
 
 
   // Recommender endpoints
   async getRecommendersByUserId(auth_user_id: string) {
-    return this.makeRequest(`/api/recommenders/getByUserId/${auth_user_id}`)
+    return this.makeRequest(`/api/recommenders/user/${auth_user_id}`)
   }
 
   async getRecommenders() {

@@ -30,7 +30,7 @@ export const login = async (req: Request, res: Response) => {
 
     const searchPreferences = await knex<UserSearchPreferences>('user_search_preferences')
       .select('*')
-      .where({ user_id: user.user_id })
+      .where('user_id', user.user_id)
       .first();
 
     const userWithPreferences = {
