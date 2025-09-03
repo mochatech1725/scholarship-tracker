@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS scholarships (
     target_type VARCHAR(100),
     min_award DECIMAL(10,2),
     max_award DECIMAL(10,2),
-    deadline DATE,
+    deadline VARCHAR(255),
     eligibility TEXT,
     gender VARCHAR(50),
     ethnicity VARCHAR(100),
