@@ -214,8 +214,7 @@ const emit = defineEmits<{
 }>()
 
 const form = ref<UserSearchPreferences>({
-  user_id: 0, // Will be set by the backend
-  subject_areas: [],
+  user_id: 0, // Will be set by the backen  subject_areas: [],
   academic_level: 'Undergraduate',
   target_type: 'Both',
   gender: 'Female',

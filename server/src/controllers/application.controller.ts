@@ -55,7 +55,7 @@ export const getByUserId = async (req: Request, res: Response) => {
     const populatedApplications = await populateApplicationsWithRelatedData(applications);
     res.json(populatedApplications);
   } catch (error) {
-    console.error('Error in getByStudentId:', error);
+    console.error('Error in getByUserId:', error);
     res.status(500).json({ message: 'Error fetching applications', error });
   }
 };

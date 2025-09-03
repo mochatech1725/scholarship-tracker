@@ -445,7 +445,7 @@ const loadDashboardData = async () => {
     
     // Load applications for the current user
     if (userStore.user?.user_id) {
-      await applicationStore.getApplicationsByStudentId(userStore.user.user_id)
+      await applicationStore.getApplicationsByUserId(userStore.user.user_id)
     }
   } catch (error) {
     console.error('Error loading dashboard data:', error)

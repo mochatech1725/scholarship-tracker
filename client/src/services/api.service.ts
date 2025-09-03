@@ -111,14 +111,14 @@ class ApiService {
       method: 'DELETE'
     })
   }
-  async getApplicationsByUserId(auth_user_id: string) {
+  async getApplicationsByUserId(auth_user_id: number) {
     return this.makeRequest(`/api/applications/user/${auth_user_id}`)
   }
 
 
 
   // Recommender endpoints
-  async getRecommendersByUserId(auth_user_id: string) {
+  async getRecommendersByUserId(auth_user_id: number) {
     return this.makeRequest(`/api/recommenders/user/${auth_user_id}`)
   }
 

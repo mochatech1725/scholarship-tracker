@@ -29,9 +29,9 @@ const userStore = useUserStore()
 
 const loadRecommenders = async () => {
   try {
-    const auth_user_id = userStore.user?.auth_user_id
-    if (auth_user_id) {
-      recommenders.value = await recommenderStore.getRecommendersByUserId(auth_user_id.toString())
+    const user_id = userStore.user?.user_id
+    if (user_id) {
+      recommenders.value = await recommenderStore.getRecommendersByUserId(user_id)
     }
   } catch (error) {
     console.error('Failed to load recommenders:', error)

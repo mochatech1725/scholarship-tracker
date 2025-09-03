@@ -239,7 +239,7 @@ const loadApplications = async () => {
   
   loading.value = true
   try {
-    await applicationStore.getApplicationsByStudentId(userStore.user.user_id || 0)
+          await applicationStore.getApplicationsByUserId(userStore.user.user_id || 0)
   } catch (error) {
     console.error('Failed to load applications:', error)
     $q.notify({

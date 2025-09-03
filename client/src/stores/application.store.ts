@@ -31,7 +31,7 @@ export const useApplicationStore = defineStore('application', {
       }
     },
 
-    async getApplicationsByUserId(user_id: string) {
+    async getApplicationsByUserId(user_id: number) {
       try {
         const result = await apiService.getApplicationsByUserId(user_id)
         // Ensure result is an array

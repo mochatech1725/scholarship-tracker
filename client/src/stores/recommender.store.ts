@@ -29,7 +29,7 @@ export const useRecommenderStore = defineStore('recommender', {
       }
     },
 
-    async getRecommendersByUserId(user_id: string) {
+    async getRecommendersByUserId(user_id: number) {
       this.recommenders = await apiService.getRecommendersByUserId(user_id)
       return this.recommenders
     },

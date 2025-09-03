@@ -45,7 +45,7 @@ export const getByUserId = async (req: Request, res: Response) => {
 
     res.json(recommenders || []);
   } catch (error) {
-    console.error('Error in getByStudentId:', error);
+    console.error('Error in getByUserId:', error);
     res.status(500).json({ message: 'Error fetching recommenders', error });
   }
 };
