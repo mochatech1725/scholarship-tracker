@@ -313,7 +313,7 @@ export class ScholarshipSearchService {
    */
   async getScholarshipById(id: string): Promise<Scholarship | null> {
     try {
-      const item = await this.searchService.getScholarshipById(id);
+      const item = await this.searchService.getScholarshipById(parseInt(id));
       if (!item) return null;
 
       return item;

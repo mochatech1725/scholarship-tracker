@@ -49,7 +49,7 @@ export const getByUserId = async (req: Request, res: Response) => {
     const knex = getKnex();
     const applications = await knex<Application>('applications')
       .select('*')
-      .where({ user_id: req.params.user_id })
+      .where('user_id', req.params.user_id)
       .orderBy('created_at', 'desc');
 
     const populatedApplications = await populateApplicationsWithRelatedData(applications);
