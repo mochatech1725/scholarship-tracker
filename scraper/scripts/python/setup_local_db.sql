@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS scholarships (
     title VARCHAR(500) NOT NULL,
     description TEXT,
     organization VARCHAR(255),
-    orga_website VARCHAR(500),
+    org_website VARCHAR(500),
     target_type VARCHAR(50),
     min_award DECIMAL(10,2),
     max_award DECIMAL(10,2),

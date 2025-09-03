@@ -24,7 +24,7 @@ class Scholarship:
     title: str = ""
     description: Optional[str] = None
     organization: Optional[str] = None
-    orga_website: Optional[str] = None
+    org_website: Optional[str] = None
     target_type: Optional[str] = None
     min_award: Optional[float] = None
     max_award: Optional[float] = None
