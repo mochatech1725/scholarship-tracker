@@ -40,7 +40,7 @@ export const getByUserId = async (req: Request, res: Response) => {
     const knex = getKnex();
     const recommenders = await knex<Recommender>('recommenders')
       .select('*')
-              .where({ user_id: req.params.user_id })
+      .where({ user_id: req.params.user_id })
       .orderBy('created_at', 'desc');
 
     res.json(recommenders || []);
