@@ -44,12 +44,12 @@ export const getAll = async (req: Request, res: Response) => {
   }
 };
 
-export const getByStudentId = async (req: Request, res: Response) => {
+export const getByUserId = async (req: Request, res: Response) => {
   try {
     const knex = getKnex();
     const applications = await knex<Application>('applications')
       .select('*')
-      .where({ student_id: parseInt(req.params.user_id) })
+              .where({ user_id: req.params.user_id })
       .orderBy('created_at', 'desc');
 
     const populatedApplications = await populateApplicationsWithRelatedData(applications);

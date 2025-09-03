@@ -29,16 +29,11 @@ export const useRecommenderStore = defineStore('recommender', {
       }
     },
 
-    async getRecommendersByUserId(auth_user_id: string) {
-      this.recommenders = await apiService.getRecommendersByUserId(auth_user_id)
+    async getRecommendersByUserId(user_id: string) {
+      this.recommenders = await apiService.getRecommendersByUserId(user_id)
       return this.recommenders
     },
 
-    async getRecommendersByStudentId(student_id: number) {
-      this.recommenders = await apiService.getRecommendersByStudentId(student_id)
-      return this.recommenders
-    },
-    
     async getRecommenderById(recommender_id: number) {
       try {
         return await apiService.getRecommenderById(recommender_id)

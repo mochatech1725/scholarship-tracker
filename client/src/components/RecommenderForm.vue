@@ -112,7 +112,7 @@ const emit = defineEmits<{
 const relationshipOptions = ['Teacher', 'Counselor', 'Employer', 'Friend', 'Other']
 
 const form = ref<Omit<Recommender, 'recommender_id'> & { email_address: string; phone_number: string }>({
-  student_id: props.user?.user_id ||  0,
+      user_id: props.user?.user_id ||  0,
   first_name: '',
   last_name: '',
   relationship: '',
@@ -147,7 +147,7 @@ const rules = {
 
 const getDefaultFormData = () => {
   return {
-    student_id: props.user?.user_id || 0,
+    user_id: props.user?.user_id || 0,
     first_name: '',
     last_name: '',
     relationship: '',
@@ -159,7 +159,7 @@ const getDefaultFormData = () => {
 const initializeForm = () => {
   if (props.recommender) {
     const recommenderData = {
-      student_id: props.recommender.student_id || 0,
+      user_id: props.recommender.user_id || 0,
       first_name: props.recommender.first_name,
       last_name: props.recommender.last_name,
       relationship: props.recommender.relationship || '',

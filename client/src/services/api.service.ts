@@ -8,7 +8,7 @@ class ApiService {
   private async getAuthHeaders() {
     const authStore = useAuthStore()
     const token = await authStore.getToken()
-    
+
     return {
       ...(token && { Authorization: `Bearer ${token}` })
     }
@@ -18,7 +18,7 @@ class ApiService {
     try {
       const headers = await this.getAuthHeaders()
       const url = endpoint
-      
+
       const response = await api({
         url,
         method: options.method || 'GET',
@@ -76,7 +76,7 @@ class ApiService {
     return this.makeRequest('/api/auth/login')
   }
 
-  async updateProfile(search_preferences: UserSearchPreferences,  user_id: number) {
+  async updateProfile(search_preferences: UserSearchPreferences, user_id: number) {
     return this.makeRequest(`/api/users/saveProfile/${user_id}`, {
       method: 'POST',
       data: search_preferences
@@ -115,14 +115,7 @@ class ApiService {
     return this.makeRequest(`/api/applications/getByUserId/${auth_user_id}`)
   }
 
-  async getApplicationsByStudentId(student_id: number) {
-    return this.makeRequest(`/api/applications/getByStudentId/${student_id}`)
-  }
 
-  // Recommender endpoints
-  async getRecommendersByStudentId(student_id: number) {
-    return this.makeRequest(`/api/recommenders/getByStudentId/${student_id}`)
-  }
 
   // Recommender endpoints
   async getRecommendersByUserId(auth_user_id: string) {

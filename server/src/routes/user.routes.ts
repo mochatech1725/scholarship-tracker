@@ -2,7 +2,7 @@ import express from 'express';
 import {
   getUsers,
   getUserById,
-  getByStudentId,
+  getByUserId,
   saveUserProfile,
   createUser,
   getDashboardStats
@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.get('/', getUsers);
 router.get('/getById/:user_id', getUserById);
-router.get('/getByStudentId/:student_id', getByStudentId);
+router.get('/getByUserId/:user_id', getByUserId);
 router.get('/dashboard', getDashboardStats);
 router.post('/create', createUser);
 router.post('/saveProfile/:user_id', saveUserProfile);

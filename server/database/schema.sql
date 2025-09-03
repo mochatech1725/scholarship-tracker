@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS user_search_preferences (
 
 CREATE TABLE IF NOT EXISTS applications (
     application_id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
     scholarship_name VARCHAR(500) NOT NULL,
     target_type VARCHAR(100),
     organization VARCHAR(255) NOT NULL,
@@ -56,13 +56,13 @@ CREATE TABLE IF NOT EXISTS applications (
     due_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES users(auth_user_id) ON DELETE CASCADE,
-    INDEX idx_student_id (student_id),
+    FOREIGN KEY (user_id) REFERENCES users(auth_user_id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
     INDEX idx_scholarship_name (scholarship_name),
     INDEX idx_status (status),
     INDEX idx_organization (organization),
     INDEX idx_due_date (due_date),
-    INDEX idx_applications_student_scholarship (student_id, scholarship_name)
+    INDEX idx_applications_user_scholarship (user_id, scholarship_name)
 );
 
 CREATE TABLE IF NOT EXISTS essays (
@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS essays (
 
 CREATE TABLE IF NOT EXISTS recommenders (
     recommender_id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
     email_address VARCHAR(255) NOT NULL,
@@ -88,8 +88,8 @@ CREATE TABLE IF NOT EXISTS recommenders (
     phone_number VARCHAR(20),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_id) REFERENCES users(auth_user_id) ON DELETE CASCADE,
-    INDEX idx_student_id (student_id),
+    FOREIGN KEY (user_id) REFERENCES users(auth_user_id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
     INDEX idx_email (email_address)
 );
 

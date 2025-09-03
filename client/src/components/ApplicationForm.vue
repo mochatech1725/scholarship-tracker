@@ -297,7 +297,7 @@ const recommenders = ref<Recommender[]>([])
 // Single source of truth for default form data
 const getDefaultFormData = (): Omit<Application, 'application_id'> => {
   return {
-    student_id: userStore.user?.user_id || 0,
+    user_id: userStore.user?.user_id || 0,
     scholarship_name: '',
     target_type: 'Merit' as const,
     organization: '',

@@ -148,7 +148,7 @@ const createApplicationUpdateObject = (recommendations: Recommendation[]): Appli
   
   return {
     ...(props.application.application_id ? { application_id: props.application.application_id } : {}),
-    student_id: props.application.student_id,
+            user_id: props.application.user_id,
     scholarship_name: props.application.scholarship_name,
     target_type: props.application.target_type,
     organization: props.application.organization,
