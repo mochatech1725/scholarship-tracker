@@ -50,8 +50,8 @@ export class SearchService {
     return await query.limit(100);
   }
 
-  async getScholarshipById(scholarship_id: string): Promise<Scholarship | null> {
-    const result = await this.db<Scholarship>('scholarships').where({ scholarship_id }).first();
+  async getScholarshipById(scholarship_id: number): Promise<Scholarship | null> {
+    const result = await this.db<Scholarship>('scholarships').where('scholarship_id', scholarship_id).first();
     return result || null;
   }
 
