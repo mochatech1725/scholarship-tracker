@@ -69,9 +69,9 @@ class ApiService {
     })
   }
 
-  async getUser(auth_user_id?: string) {
-    if (auth_user_id) {
-      return this.makeRequest(`/api/users/getById/${auth_user_id}`)
+  async getUser(user_id?: number) {
+    if (user_id) {
+      return this.makeRequest(`/api/users/${user_id}`)
     }
     return this.makeRequest('/api/auth/login')
   }
@@ -111,15 +111,15 @@ class ApiService {
       method: 'DELETE'
     })
   }
-  async getApplicationsByUserId(auth_user_id: number) {
-    return this.makeRequest(`/api/applications/user/${auth_user_id}`)
+  async getApplicationsByUserId(user_id: number) {
+    return this.makeRequest(`/api/applications/user/${user_id}`)
   }
 
 
 
   // Recommender endpoints
-  async getRecommendersByUserId(auth_user_id: number) {
-    return this.makeRequest(`/api/recommenders/user/${auth_user_id}`)
+  async getRecommendersByUserId(user_id: number) {
+    return this.makeRequest(`/api/recommenders/user/${user_id}`)
   }
 
   async getRecommenders() {

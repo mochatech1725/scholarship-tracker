@@ -14,7 +14,7 @@ export const useUserStore = defineStore('user', {
       try {
         this.isLoading = true
         const response = await apiService.login()
-        
+
         return this.setUser(response.user)
       } catch (err) {
         console.error('Failed to authenticate user:', err)
@@ -27,29 +27,29 @@ export const useUserStore = defineStore('user', {
     async handleRegistration(auth0User: Auth0User) {
       try {
         this.isLoading = true
-        
+
         // Step 1: Register with Auth0
         const registerData: RegisterData = {
           email_address: auth0User.emailAddress,
         }
         await apiService.register(registerData)
-        
+
         // Step 2: Create user record in the users table
         const userData = {
           auth_user_id: auth0User.sub,
-          first_name: '', 
+          first_name: '',
           last_name: '',
           email_address: auth0User.emailAddress,
           phone_number: '',
           created_at: new Date(),
           updated_at: new Date()
         }
-        
+
         await apiService.createUser(userData)
-        
+
         // Step 3: Fetch the complete user profile
         const userProfileResponse = await apiService.getUser()
-        
+
         return this.setUser(userProfileResponse.user)
       } catch (err) {
         console.error('Failed to register user:', err)
@@ -59,10 +59,10 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async loadUser(auth_user_id?: string) {
+    async loadUser(user_id?: number) {
       try {
-        console.log('loadUser called with auth_user_id:', auth_user_id)
-        const user = await apiService.getUser(auth_user_id)
+        console.log('loadUser called with user_id:', user_id)
+        const user = await apiService.getUser(user_id)
         this.user = user
         return user
       } catch (error) {
@@ -75,7 +75,7 @@ export const useUserStore = defineStore('user', {
       try {
         this.isLoading = true
         const response = await apiService.getUser()
-        
+
         return this.setUser(response.user)
       } catch (err) {
         console.error('Failed to load user profile:', err)
@@ -90,7 +90,7 @@ export const useUserStore = defineStore('user', {
         const user: User = {
           ...backendUser
         }
-        
+
         this.user = user
         return user
       } catch (error) {
@@ -115,7 +115,7 @@ export const useUserStore = defineStore('user', {
       if (!this.user || !search_preferences) return
 
       try {
-        const updatedUser = await apiService.updateProfile(search_preferences , this.user.user_id || 0)
+        const updatedUser = await apiService.updateProfile(search_preferences, this.user.user_id || 0)
         if (updatedUser) {
           this.user = updatedUser
         }

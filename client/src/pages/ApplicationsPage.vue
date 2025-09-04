@@ -136,8 +136,10 @@ const columns: QTableColumn[] = [
   { name: 'organization', label: 'Organization', field: 'organization', sortable: true, align: 'left' },
   { name: 'scholarship_name', label: 'Scholarship', field: 'scholarship_name', sortable: true, align: 'left' },
   { name: 'target_type', label: 'Type', field: 'target_type', sortable: true, align: 'left' },
-  { name: 'min_award', label: 'Min Award', field: 'min_award', sortable: true, align: 'right', format: (val: number) => `$${val.toLocaleString()}` },
-  { name: 'max_award', label: 'Max Award', field: 'max_award', sortable: true, align: 'right', format: (val: number) => `$${val.toLocaleString()}` },
+  { name: 'min_award', label: 'Min Award', field: 'min_award', sortable: true, align: 'right'},
+  { name: 'max_award', label: 'Max Award', field: 'max_award', sortable: true, align: 'right'},
+  //{ name: 'min_award', label: 'Min Award', field: 'min_award', sortable: true, align: 'right', format: (val: number) => `$${val.toLocaleString()}` },
+  //{ name: 'max_award', label: 'Max Award', field: 'max_award', sortable: true, align: 'right', format: (val: number) => `$${val.toLocaleString()}` },
   { name: 'status', label: 'Status', field: 'status', sortable: true, align: 'left' },
   { name: 'current_action', label: 'Current Action', field: 'current_action', sortable: true, align: 'left' },
   { name: 'due_date', label: 'Due Date', field: 'due_date', sortable: true, align: 'left', format: (val: string) => formatDate(val) },
@@ -214,8 +216,8 @@ const loadApplications = async () => {
   if (!userStore.user) {
     try {
       // If we have a user in auth store, use their ID, otherwise load without ID
-      if (authStore.user?.auth_user_id) {
-        await userStore.loadUser(authStore.user.auth_user_id)
+      if (authStore.user?.user_id) {
+        await userStore.loadUser(authStore.user.user_id)
       } else {
         await userStore.loadUser()
       }

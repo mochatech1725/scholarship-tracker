@@ -23,21 +23,21 @@
           />
           <q-btn
             flat
-            :to="{ name: 'scholarshipSearch' }"
-            :class="{ 'text-primary': $route.name === 'scholarshipSearch' }"
-            label="Search"
-          />
-          <q-btn
-            flat
             :to="{ name: 'applicationsList' }"
             :class="{ 'text-primary': $route.name === 'applicationsList' }"
             label="Applications"
           />
           <q-btn
             flat
-            :to="{ name: 'essaysList' }"
-            :class="{ 'text-primary': $route.name === 'essaysList' }"
-            label="Essays"
+            :to="{ name: 'recommendersList' }"
+            :class="{ 'text-primary': $route.name === 'recommendersList' }"
+            label="Recommenders"
+          />
+          <q-btn
+            flat
+            :to="{ name: 'scholarshipSearch' }"
+            :class="{ 'text-primary': $route.name === 'scholarshipSearch' }"
+            label="Search"
           />
           <q-btn
             flat
@@ -50,17 +50,6 @@
         <!-- User Menu and Mobile Menu -->
         <q-space />
         
-        <!-- Notifications -->
-        <q-btn
-          flat
-          round
-          icon="notifications"
-          class="q-mr-sm"
-          color="white"
-        >
-          <q-badge color="red" floating>{{ notificationCount }}</q-badge>
-        </q-btn>
-
         <!-- User Avatar -->
         <q-avatar color="primary" text-color="white" class="q-mr-sm">
           {{ userInitials }}
@@ -178,9 +167,6 @@
           <!-- Welcome Banner -->
           <div class="welcome-banner bg-primary text-white q-pa-lg q-mb-lg rounded-borders">
             <div class="text-h4 q-mb-sm">Welcome back, {{ userFirstName }}!</div>
-            <div class="text-body1 q-mb-md">
-              You have {{ pendingApplicationsCount }} applications in progress and {{ newMatchesCount }} new scholarship matches.
-            </div>
             <q-btn 
               color="white" 
               text-color="primary" 
@@ -189,129 +175,6 @@
             />
           </div>
 
-          <!-- Summary Statistics Cards -->
-          <div class="row q-gutter-md q-mb-lg">
-            <div class="col-12 col-sm-6 col-md-3">
-              <q-card class="stat-card">
-                <q-card-section class="text-center">
-                  <q-icon name="description" size="48px" color="primary" class="q-mb-sm" />
-                  <div class="text-h4 text-weight-bold">{{ totalApplicationsCount }}</div>
-                  <div class="text-body2 text-grey-7">Total Applications</div>
-                </q-card-section>
-              </q-card>
-            </div>
-            <div class="col-12 col-sm-6 col-md-3">
-              <q-card class="stat-card">
-                <q-card-section class="text-center">
-                  <q-icon name="schedule" size="48px" color="warning" class="q-mb-sm" />
-                  <div class="text-h4 text-weight-bold">{{ pendingApplicationsCount }}</div>
-                  <div class="text-body2 text-grey-7">Pending</div>
-                </q-card-section>
-              </q-card>
-            </div>
-            <div class="col-12 col-sm-6 col-md-3">
-              <q-card class="stat-card">
-                <q-card-section class="text-center">
-                  <q-icon name="check_circle" size="48px" color="positive" class="q-mb-sm" />
-                  <div class="text-h4 text-weight-bold">{{ submittedApplicationsCount }}</div>
-                  <div class="text-body2 text-grey-7">Submitted</div>
-                </q-card-section>
-              </q-card>
-            </div>
-            <div class="col-12 col-sm-6 col-md-3">
-              <q-card class="stat-card">
-                <q-card-section class="text-center">
-                  <q-icon name="attach_money" size="48px" color="positive" class="q-mb-sm" />
-                  <div class="text-h4 text-weight-bold">{{ totalValueFormatted }}</div>
-                  <div class="text-body2 text-grey-7">Total Value</div>
-                </q-card-section>
-              </q-card>
-            </div>
-          </div>
-
-          <!-- Quick Actions and Upcoming Deadlines -->
-          <div class="row q-gutter-lg">
-            <!-- Quick Actions -->
-            <div class="col-12 col-md-4">
-              <q-card class="quick-actions-card">
-                <q-card-section>
-                  <div class="text-h6 q-mb-md">Quick Actions</div>
-                  <div class="q-gutter-y-sm">
-                    <q-btn
-                      flat
-                      block
-                      align="left"
-                      icon="search"
-                      label="Search Scholarships"
-                      class="quick-action-btn"
-                      @click="$router.push({ name: 'scholarshipSearch' })"
-                    />
-                    <q-btn
-                      flat
-                      block
-                      align="left"
-                      icon="add"
-                      label="New Application"
-                      class="quick-action-btn"
-                      @click="$router.push({ name: 'applicationsList' })"
-                    />
-                    <q-btn
-                      flat
-                      block
-                      align="left"
-                      icon="edit"
-                      label="Manage Essays"
-                      class="quick-action-btn"
-                      @click="$router.push({ name: 'essaysList' })"
-                    />
-                    <q-btn
-                      flat
-                      block
-                      align="left"
-                      icon="people"
-                      label="Track Recommendations"
-                      class="quick-action-btn"
-                      @click="$router.push({ name: 'recommendersList' })"
-                    />
-                  </div>
-                </q-card-section>
-              </q-card>
-            </div>
-
-            <!-- Upcoming Deadlines -->
-            <div class="col-12 col-md-8">
-              <q-card class="deadlines-card">
-                <q-card-section>
-                  <div class="row items-center q-mb-md">
-                    <div class="text-h6">Upcoming Deadlines</div>
-                    <q-space />
-                    <q-btn flat label="View All" color="primary" @click="$router.push({ name: 'applicationsList' })" />
-                  </div>
-                  <div v-if="upcomingDeadlines.length === 0" class="text-center q-pa-md text-grey-6">
-                    No upcoming deadlines
-                  </div>
-                  <div v-else class="q-gutter-y-md">
-                                         <q-card 
-                       v-for="application in upcomingDeadlines" 
-                       :key="application.application_id || `app-${Math.random()}`"
-                       class="deadline-item"
-                       :class="getDeadlineCardClass(application)"
-                     >
-                      <q-card-section class="q-pa-sm">
-                        <div class="text-weight-bold">{{ application.scholarship_name }}</div>
-                        <div class="text-caption text-grey-7">
-                          ${{ application.min_award.toLocaleString() }} - ${{ application.max_award.toLocaleString() }} • {{ application.theme }}
-                        </div>
-                        <div class="text-caption text-grey-7">
-                          Due {{ formatDeadline(application.due_date) }}
-                        </div>
-                      </q-card-section>
-                    </q-card>
-                  </div>
-                </q-card-section>
-              </q-card>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -330,7 +193,6 @@ import { useAuthStore } from 'stores/auth.store'
 import { useUserStore } from 'stores/user.store'
 import { useApplicationStore } from 'stores/application.store'
 import { useQuasar } from 'quasar'
-import type { Application } from 'src/shared-types'
 
 const authStore = useAuthStore()
 const userStore = useUserStore()
@@ -357,79 +219,6 @@ const userInitials = computed(() => {
   const last = userStore.user.last_name?.charAt(0) || ''
   return (first + last).toUpperCase() || 'U'
 })
-
-// Computed properties for application statistics
-const totalApplicationsCount = computed(() => applicationStore.applications.length)
-
-const pendingApplicationsCount = computed(() => 
-  applicationStore.applications.filter(app => 
-    app.status === 'Not Started' || app.status === 'In Progress'
-  ).length
-)
-
-const submittedApplicationsCount = computed(() => 
-  applicationStore.applications.filter(app => 
-    app.status === 'Submitted' || app.status === 'Awarded' || app.status === 'Not Awarded'
-  ).length
-)
-
-const totalValueFormatted = computed(() => {
-  const total = applicationStore.applications.reduce((sum, app) => {
-    return sum + (app.max_award || 0)
-  }, 0)
-  return `$${total.toLocaleString()}`
-})
-
-const newMatchesCount = computed(() => {
-  // This could be enhanced with actual scholarship matching logic
-  // For now, return a placeholder based on pending applications
-  return Math.min(pendingApplicationsCount.value, 3)
-})
-
-const notificationCount = computed(() => {
-  // Calculate notifications based on upcoming deadlines and pending items
-  const upcomingCount = upcomingDeadlines.value.length
-  const pendingCount = pendingApplicationsCount.value
-  return Math.min(upcomingCount + pendingCount, 9) // Cap at 9
-})
-
-const upcomingDeadlines = computed(() => {
-  const now = new Date()
-  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-  
-  return applicationStore.applications
-    .filter(app => {
-      const dueDate = new Date(app.due_date)
-      return dueDate >= now && dueDate <= thirtyDaysFromNow && 
-             (app.status === 'Not Started' || app.status === 'In Progress')
-    })
-    .sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-    .slice(0, 5) // Show top 5 upcoming deadlines
-})
-
-// Helper functions
-const formatDeadline = (dueDate: Date | string) => {
-  const date = new Date(dueDate)
-  const now = new Date()
-  const diffTime = date.getTime() - now.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Tomorrow'
-  if (diffDays < 7) return `in ${diffDays} days`
-  if (diffDays < 14) return `in ${Math.ceil(diffDays / 7)} week`
-  return `in ${Math.ceil(diffDays / 7)} weeks`
-}
-
-const getDeadlineCardClass = (application: Application) => {
-  const dueDate = new Date(application.due_date)
-  const now = new Date()
-  const diffDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-  
-  if (diffDays <= 3) return 'bg-red-1'
-  if (diffDays <= 7) return 'bg-orange-1'
-  return 'bg-green-1'
-}
 
 // Load data
 const loadDashboardData = async () => {
