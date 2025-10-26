@@ -272,21 +272,6 @@ GOOGLE_CUSTOM_SEARCH_CX=your_custom_search_engine_id_here
 
 ### 3. Database Setup
 
-#### Local MySQL
-```bash
-# Install MySQL if not already installed
-brew install mysql  # macOS
-sudo apt-get install mysql-server  # Ubuntu
-
-# Start MySQL
-brew services start mysql  # macOS
-sudo systemctl start mysql  # Ubuntu
-
-# Create database
-mysql -u root -p
-CREATE DATABASE scholarships;
-```
-
 #### Production MySQL (Optional)
 1. Set up a production MySQL database
 2. Note the host, username, and password

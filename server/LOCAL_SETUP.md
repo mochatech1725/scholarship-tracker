@@ -128,53 +128,6 @@ The application uses the following main tables:
 - `POST /api/scholarships/find` - Search for scholarships
 - `GET /api/scholarships/sources` - Get available scholarship sources
 
-## Troubleshooting
-
-### MySQL Connection Issues
-
-1. **MySQL not running:**
-   ```bash
-   # macOS
-   brew services start mysql
-   
-   # Ubuntu
-   sudo systemctl start mysql
-   
-   # Windows
-   # Start MySQL service from Services
-   ```
-
-2. **Wrong credentials:**
-   - Check your `.env` file
-   - Verify MySQL user and password
-   - Ensure the database exists
-
-3. **Port conflicts:**
-   - Change `DB_PORT` in `.env` if MySQL is on a different port
-   - Default MySQL port is 3306
-
-### Build Issues
-
-1. **TypeScript errors:**
-   ```bash
-   npm run build
-   ```
-   Fix any TypeScript errors before running the server.
-
-2. **Missing dependencies:**
-   ```bash
-   npm install
-   ```
-
-### Server Issues
-
-1. **Port already in use:**
-   - Change `PORT` in `.env`
-   - Kill the process using the port
-
-2. **CORS issues:**
-   - Update `CORS_ORIGIN` in `.env` to match your client URL
-   - Default is `http://localhost:9000` for the Quasar client
 
 ## Development Workflow
 
@@ -183,34 +136,9 @@ The application uses the following main tables:
 3. **Start the client:** (in the client directory) `npm run dev`
 4. **Start the scraper:** (in the scraper directory) `python main.py`
 
-## File Structure
-
-```
-server/
-├── src/
-│   ├── config/
-│   │   ├── auth0.config.ts
-│   │   └── database.config.ts      # Local database config
-│   ├── controllers/
-│   ├── middleware/
-│   ├── routes/
-│   ├── services/
-│   │   ├── database.service.ts     # Local database service
-│   │   └── scholarship-search.service.ts
-│   ├── shared-types/
-│   ├── utils/
-│   └── index.ts
-├── database/
-│   └── schema.sql                  # Database schema
-├── scripts/
-│   └── setup-local-db.sh          # Database setup script
-├── env.example                     # Environment template
-└── package.json
-```
-
 ## What Was Removed
 
-The following AWS-related components were removed:
+The following AWS-related components were removed to create a less expensive version to test with:
 
 - AWS Secrets Manager integration
 - AWS RDS configuration

@@ -16,8 +16,7 @@
 5. [Database Design](#5-database-design)
 6. [API Design](#6-api-design)
 7. [Security Design](#7-security-design)
-8. [Deployment Architecture](#8-deployment-architecture)
-9. [Future Enhancements](#9-future-enhancements)
+8. [Library Integration and Use Cases](#8-library-integration-and-use-cases)
 
 ---
 
@@ -32,7 +31,7 @@
 ### 1.2. Description
 The Scholarship Tracker is a comprehensive web application designed to help students discover, track, and manage scholarship opportunities. The system consists of three independent components that work together through a shared database:
 
-1. **Scholarship Scraper (AWS Infrastructure)** - Automated scholarship discovery and data collection service
+1. **Scholarship Scraper (Python + Local MySQL)** - Automated scholarship discovery and data collection service
 2. **Scholarship Server (Backend API)** - User management and application tracking service
 3. **Scholarship Client (Frontend)** - User interface for scholarship search and application management
 
@@ -40,12 +39,12 @@ The system provides automated scholarship discovery through AI-powered web scrap
 
 ### 1.3. Assumptions
 - Users have basic internet connectivity and modern web browsers
-- AWS services are available and properly configured
+- Local MySQL database is available and properly configured
 - Auth0 service is available for authentication
 - Scholarship websites remain accessible for scraping
 - Users are primarily students seeking scholarship opportunities
 - Database performance is sufficient for expected user load
-- AWS infrastructure costs are acceptable for the project scope
+- Local development environment is properly configured
 
 ---
 
@@ -69,83 +68,14 @@ The system provides automated scholarship discovery through AI-powered web scrap
 - Users can manage recommender information
 - System automatically discovers and updates scholarship data
 - System provides intelligent scholarship recommendations
-- Users can export scholarship data and application information
 
-### 2.2. Non functional requirements
-
-#### 2.2.1. Performance
-- **Response Time**: API endpoints should respond within 500ms for 95% of requests
-- **Throughput**: System should handle 1000 concurrent users
-- **Database Performance**: Query response time under 200ms for standard operations
-- **Frontend Performance**: Page load times under 3 seconds
-- **Scraper Performance**: Process 1000+ scholarships per hour
-
-#### 2.2.2. Scalability
-- **Horizontal Scaling**: Support for multiple server instances
-- **Database Scaling**: RDS read replicas for read-heavy operations
-- **Auto-scaling**: AWS Batch and ECS auto-scaling based on workload
-- **Load Distribution**: CDN for static assets and API load balancing
-- **Microservices Ready**: Independent deployment of components
-
-#### 2.2.3. Security
-- **Authentication**: OAuth2/JWT with Auth0
-- **Authorization**: Role-based access control
-- **Data Encryption**: TLS/SSL for data in transit, encryption at rest
-- **Input Validation**: Comprehensive request sanitization
-- **Rate Limiting**: API request throttling
-- **Audit Logging**: Complete audit trail for security events
-
-#### 2.2.4. Maintainability
-- **Code Quality**: TypeScript for type safety and better development experience
-- **Documentation**: Comprehensive API documentation and code comments
-- **Modular Architecture**: Clear separation of concerns
-- **Version Control**: Git-based development workflow
-- **Testing**: Comprehensive test coverage
-- **Monitoring**: Real-time system monitoring and alerting
-
----
 
 ## 3. System Architecture
-
-### 3.1. High Level Design
-
-#### System Architecture Diagram
-```
-┌─────────────────┐    ┌─────────────────┐
-│   Scholarship   │    │   Scholarship   │
-│     Client      │◄──►│     Server      │
-│   (Vue/Quasar)  │    │  (Express/TS)   │
-└─────────────────┘    └─────────────────┘
-         │                       │
-         │                       │
-         ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐
-│   Auth0 Auth    │    │   AWS RDS       │
-│                 │    │   (MySQL)       │
-│                 │    │                 │
-└─────────────────┘    └─────────────────┘
-                                ▲
-                                │
-                                │
-                       ┌─────────────────┐
-                       │   Scholarship   │
-                       │    Scraper      │
-                       │   (AWS/CDK)     │
-                       └─────────────────┘
-                                │
-                                ▼
-                       ┌─────────────────┐
-                       │   AWS Services  │
-                       │   (Batch, S3,   │
-                       │   Lambda, etc.) │
-                       └─────────────────┘
-```
 
 #### Architecture Type
 - **Microservices Architecture**: Three independent services
 - **Database-Centric Integration**: Shared MySQL database
 - **Event-Driven**: Scheduled scraping and processing
-- **Cloud-Native**: AWS infrastructure and services
 
 ### 3.2. Technology Stack
 
@@ -171,22 +101,18 @@ The system provides automated scholarship discovery through AI-powered web scrap
 - **Process Management**: PM2 for production
 
 #### 3.2.3. Database
-- **Database**: AWS RDS MySQL v8.0.35
+- **Database**: Local MySQL v8.0+ (previously AWS RDS MySQL v8.0.35)
 - **ORM**: Knex.js for query building
 - **Connection Pooling**: Built-in MySQL2 pooling
-- **Backup**: Automated daily backups with 7-day retention
-- **Encryption**: AES-256 encryption at rest
-- **SSL**: TLS 1.2+ for connections
 
-#### 3.2.4. Infrastructure
-- **Infrastructure as Code**: AWS CDK with TypeScript
-- **Compute**: AWS Batch with Fargate
-- **Container Registry**: Amazon ECR
-- **Storage**: Amazon S3 for raw data
+#### 3.2.4. Infrastructure (Current Implementation)
+- **Local Development**: Python virtual environment with local MySQL
+- **Scraper Execution**: Direct Python script execution
+- **Storage**: Local file system for raw data and logs
 - **AI/ML**: OpenAI for intelligent processing
-- **Monitoring**: CloudWatch Logs and Metrics
-- **Secrets Management**: AWS Secrets Manager
-- **Networking**: VPC with private/public subnets
+- **Monitoring**: Local logging and console output
+- **Secrets Management**: Environment variables and .env files
+
 
 ### 3.3. System Components
 
@@ -205,10 +131,8 @@ The system provides automated scholarship discovery through AI-powered web scrap
 - **Purpose**: RESTful API for business logic and data management
 - **Responsibilities**:
   - User management and authentication
-  - Application CRUD operations
   - Recommender management
   - Scholarship search and filtering
-  - Data validation and business rules
 
 **Scholarship Scraper (Data Collection)**
 - **Purpose**: Automated scholarship discovery and data processing
@@ -216,32 +140,13 @@ The system provides automated scholarship discovery through AI-powered web scrap
   - Web scraping of scholarship websites
   - AI-powered data extraction and categorization
   - Data cleaning and normalization
-  - Database population and updates
-  - Error handling and retry mechanisms
-
-**Shared Database (Data Layer)**
-- **Purpose**: Central data store for all components
-- **Responsibilities**:
-  - User data storage
-  - Application data management
-  - Scholarship data repository
-  - Recommender information
-  - Audit logging
+  - Local MySQL database population and updates
 
 #### 3.3.2. Third-party services
 
 **Authentication Services**
 - **Auth0**: OAuth2/JWT authentication and user management
 - **Purpose**: Secure user authentication and authorization
-
-**AWS Services**
-- **AWS RDS**: Managed MySQL database service
-- **AWS S3**: Object storage for raw data and assets
-- **AWS Batch**: Containerized batch processing
-- **AWS Lambda**: Serverless function execution
-- **OpenAI**: AI/ML processing capabilities
-- **AWS Secrets Manager**: Secure credential management
-- **AWS CloudWatch**: Monitoring and logging
 
 **External APIs**
 - **Scholarship Websites**: CareerOneStop, CollegeScholarship, etc.
@@ -339,158 +244,63 @@ The system provides automated scholarship discovery through AI-powered web scrap
 
 The frontend application uses Pinia for state management with the following store structure:
 
-#### 4.1.1. User Store
-```typescript
-interface UserStore {
-  user: User | null;
-  isAuthenticated: boolean;
-  login(): Promise<void>;
-  logout(): Promise<void>;
-  fetchProfile(): Promise<void>;
-}
-```
-
-#### 4.1.2. Application Store
-```typescript
-interface ApplicationStore {
-  applications: Application[];
-  currentApplication: Application | null;
-  fetchApplications(): Promise<void>;
-  createApplication(app: Application): Promise<void>;
-  updateApplication(id: string, app: Application): Promise<void>;
-  deleteApplication(id: string): Promise<void>;
-}
-```
-
-#### 4.1.3. Scholarship Store
-```typescript
-interface ScholarshipStore {
-  scholarships: Scholarship[];
-  searchResults: Scholarship[];
-  searchScholarships(criteria: SearchCriteria): Promise<void>;
-  saveScholarship(scholarship: Scholarship): Promise<void>;
-}
-```
-
----
-
 ## 5. Database Design
 
 ### 5.1. ER Diagram
 
 ```
-┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│    Users    │    │Applications │    │Recommenders │
-├─────────────┤    ├─────────────┤    ├─────────────┤
-│ id (PK)     │    │ id (PK)     │    │ id (PK)     │
-│ email       │◄───┤ user_id (FK)│    │ user_id (FK)│
-│ first_name  │    │ scholarship │    │ name        │
-│ last_name   │    │ title       │    │ email       │
-│ created_at  │    │ description │    │ title       │
-│ updated_at  │    │ status      │    │ institution │
-└─────────────┘    │ deadline    │    │ relationship│
-                   │ amount      │    │ created_at  │
-                   │ created_at  │    │ updated_at  │
-                   │ updated_at  │    └─────────────┘
-                   └─────────────┘
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│       Users         │    │Applications        │    │   Recommenders     │
+├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
+│ user_id (PK)        │    │ application_id (PK) │    │ recommender_id (PK)│
+│ auth_user_id        │◄───┤ user_id (FK)        │    │ user_id (FK)       │
+│ first_name          │    │ scholarship_name    │    │ first_name         │
+│ last_name           │    │ organization        │    │ last_name          │
+│ email_address       │    │ application_link    │    │ email_address      │
+│ phone_number        │    │ status              │    │ relationship       │
+│ created_at          │    │ due_date            │    │ phone_number       │
+│ updated_at          │    │ amount              │    │ created_at         │
+└─────────────────────┘    │ created_at          │    │ updated_at         │
+          │                │ updated_at          │    └─────────────────────┘
+          │                └─────────────────────┘              │
+          │                           │                          │
+          │                        │                          │
+          ▼                        ▼                          ▼
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│User Search Prefs    │    │      Essays         │    │  Recommendations   │
+├─────────────────────┤    ├─────────────────────┤    ├─────────────────────┤
+│ user_id (PK,FK)     │    │ essay_id (PK)      │    │ recommendation_id   │
+│ target_type         │    │ application_id (FK)│    │ application_id (FK) │
+│ subject_areas       │    │ theme              │    │ recommender_id (FK)│
+│ gender              │    │ units             │    │ content            │
+│ ethnicity           │    │ essay_link        │    │ status             │
+│ academic_gpa        │    │ word_count        │    │ submitted_at       │
+│ academic_level      │    │ created_at        │    │ created_at         │
+│ created_at          │    │ updated_at        │    │ updated_at         │
+│ updated_at          │    └─────────────────────┘    └─────────────────────┘
+└─────────────────────┘
+
+┌─────────────────────┐
+│    Scholarships     │
+├─────────────────────┤
+│ scholarship_id (PK) │
+│ title              │
+│ description        │
+│ organization       │
+│ target_type        │
+│ min_award          │
+│ max_award          │
+│ deadline           │
+│ eligibility        │
+│ apply_url          │
+│ source             │
+│ active             │
+│ created_at         │
+│ updated_at         │
+└─────────────────────┘
 ```
 
-### 5.2. Schema Design
 
-#### Users Table
-```sql
-CREATE TABLE users (
-    id VARCHAR(255) PRIMARY KEY,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    first_name VARCHAR(100),
-    last_name VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-#### Applications Table
-```sql
-CREATE TABLE applications (
-    id VARCHAR(255) PRIMARY KEY,
-    user_id VARCHAR(255) NOT NULL,
-    scholarship_id VARCHAR(255),
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    status ENUM('draft', 'submitted', 'accepted', 'rejected', 'waitlisted'),
-    deadline DATE,
-    amount DECIMAL(10,2),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-#### Recommenders Table
-```sql
-CREATE TABLE recommenders (
-    id VARCHAR(255) PRIMARY KEY,
-    user_id VARCHAR(255) NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255),
-    title VARCHAR(255),
-    institution VARCHAR(255),
-    relationship VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-```
-
-#### Scholarships Table (Populated by Scraper)
-```sql
-CREATE TABLE scholarships (
-    id VARCHAR(255) PRIMARY KEY,
-    title VARCHAR(500) NOT NULL,
-    description TEXT,
-    amount DECIMAL(10,2),
-    deadline DATE,
-    eligibility TEXT,
-    source VARCHAR(255),
-    url VARCHAR(1000),
-    category VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-### 5.3. Indexes
-
-#### Performance Indexes
-```sql
--- Users table
-CREATE INDEX idx_users_email ON users(email);
-
--- Applications table
-CREATE INDEX idx_applications_user_id ON applications(user_id);
-CREATE INDEX idx_applications_status ON applications(status);
-CREATE INDEX idx_applications_deadline ON applications(deadline);
-
--- Recommenders table
-CREATE INDEX idx_recommenders_user_id ON recommenders(user_id);
-
--- Scholarships table
-CREATE INDEX idx_scholarships_category ON scholarships(category);
-CREATE INDEX idx_scholarships_deadline ON scholarships(deadline);
-CREATE INDEX idx_scholarships_amount ON scholarships(amount);
-CREATE FULLTEXT INDEX idx_scholarships_search ON scholarships(title, description, eligibility);
-```
-
-### 5.4. Transactions
-
-#### Transaction Management Strategies
-- **Read Operations**: No explicit transactions needed for simple queries
-- **Write Operations**: Use transactions for multi-table operations
-- **Application Creation**: Transaction to ensure data consistency
-- **Bulk Operations**: Batch transactions for scraper data updates
-- **Error Handling**: Automatic rollback on transaction failures
-
----
 
 ## 6. API Design
 
@@ -540,20 +350,6 @@ GET    /api/scholarships/health             # Service health check
 GET    /api/scholarships/categories         # Get scholarship categories
 ```
 
-### 6.2. URL schemas, naming conventions
-
-#### URL Schema
-- **Base URL**: `https://api.scholarshiptracker.com/v1`
-- **Resource-based URLs**: `/api/{resource}/{id}`
-- **Nested Resources**: `/api/{resource}/{id}/{sub-resource}`
-- **Query Parameters**: `?filter=value&sort=field&page=1`
-
-#### Naming Conventions
-- **Endpoints**: kebab-case (e.g., `/api/user-profiles`)
-- **Parameters**: camelCase (e.g., `userId`, `firstName`)
-- **Headers**: kebab-case (e.g., `Content-Type`, `Authorization`)
-- **Response Fields**: camelCase (e.g., `firstName`, `lastName`)
-
 ### 6.3. Authentication
 
 #### Authentication Flow
@@ -562,18 +358,6 @@ GET    /api/scholarships/categories         # Get scholarship categories
 3. **User Context**: Server extracts user information from token
 4. **Authorization**: Server checks user permissions
 5. **Response**: Server returns requested data or error
-
-#### JWT Token Structure
-```json
-{
-  "iss": "https://auth0.com/",
-  "sub": "auth0|user-id",
-  "aud": "api-identifier",
-  "iat": 1234567890,
-  "exp": 1234567890,
-  "scope": "read:applications write:applications"
-}
-```
 
 
 ---
@@ -615,47 +399,92 @@ GET    /api/scholarships/categories         # Get scholarship categories
 - **Monitoring**: Failed authentication attempts
 
 
----
+## 8. Library Integration and Use Cases
 
-## 8. Deployment Architecture
+### 8.1. How Libraries Work Together
 
-### 8.1. Diagram
+The scholarship tracker uses a carefully orchestrated set of libraries that work together in specific patterns:
 
+#### 8.1.1. Scraping Pipeline
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    AWS Cloud Infrastructure                  │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   Route 53  │  │ CloudFront  │  │   ALB       │         │
-│  │   DNS       │  │    CDN      │  │ Load Balancer│         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-│         │                │                │                │
-│         ▼                ▼                ▼                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │     S3      │  │   ECS       │  │   Lambda    │         │
-│  │  Static     │  │  Fargate    │  │ Orchestrator│         │
-│  │  Assets     │  │  Containers │  │             │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-│         │                │                │                │
-│         ▼                ▼                ▼                │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   RDS       │  │   Batch     │  │   Event     │         │
-│  │   MySQL     │  │ Compute Env │  │  Bridge     │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘         │
-└─────────────────────────────────────────────────────────────┘
+1. Web Request (Requests/Selenium) 
+   ↓
+2. HTML Parsing (BeautifulSoup/Cheerio)
+   ↓
+3. Data Extraction (Custom Logic)
+   ↓
+4. Data Processing (Pandas/NumPy)
+   ↓
+5. Database Storage (PyMySQL/MySQL2)
+   ↓
+6. Error Handling (Tenacity)
 ```
 
-### 8.2. Scaling Strategy
+#### 8.1.2. Library Integration Summary
 
-#### Horizontal Scaling
-- **Application Servers**: Multiple ECS Fargate instances
-- **Load Balancer**: Application Load Balancer with health checks
-- **Auto Scaling**: Scale based on CPU/memory utilization
-- **Database**: RDS read replicas for read-heavy operations
+**Scraping Pipeline:**
+- Selenium/BeautifulSoup → Scrape HTML content
+- Pandas/NumPy → Process and clean data
+- Tenacity → Handle retries and failures
+- PyMySQL → Store processed data
 
-#### Vertical Scaling
-- **Instance Types**: Upgrade to larger instance types as needed
-- **Database**: Scale RDS instance size for increased capacity
-- **Storage**: Increase EBS volumes and S3 storage
+**Server-Side Processing:**
+- Puppeteer → Handle complex JavaScript websites
+- Cheerio → Parse HTML responses
+- MySQL2 → Store and retrieve data
 
----
+#### 8.1.3. Cross-Language Integration
+
+**Python Scrapers (Local Development)**
+- BeautifulSoup → Pandas → PyMySQL → Tenacity
+- Selenium → BeautifulSoup → PyMySQL → Tenacity
+
+**TypeScript Scrapers (Production AWS)**
+- Puppeteer → Cheerio → MySQL2 → Custom retry logic
+
+**Server API (Node.js)**
+- MySQL2 → Knex.js → Express.js → Auth0
+
+
+### 8.2. Library Selection Rationale
+
+**BeautifulSoup**: Industry standard for HTML parsing in Python
+- Excellent for extracting data from HTML
+- Handles malformed HTML gracefully
+- Simple and intuitive API
+
+**Selenium**: Essential for JavaScript-heavy websites
+- Handles dynamic content loading
+- Simulates real user interactions
+- Cross-browser compatibility
+
+**Pandas**: Best-in-class data processing
+- Powerful data manipulation capabilities
+- Excellent for data cleaning and transformation
+- Built on NumPy for performance
+
+**NumPy**: Fast numerical operations
+- Optimized C implementations
+- Foundation for scientific computing
+- Memory-efficient array operations
+
+**PyMySQL**: Lightweight MySQL connector
+- Pure Python implementation
+- No external dependencies
+- Excellent performance
+
+**Tenacity**: Robust retry mechanisms
+- Exponential backoff strategies
+- Configurable retry policies
+- Decorator-based implementation
+
+**Puppeteer**: Modern browser automation
+- Headless Chrome automation
+- Excellent for complex web scraping
+- Node.js integration
+
+**Cheerio**: Server-side HTML parsing
+- jQuery-like API for Node.js
+- Fast and lightweight
+- Perfect for server-side processing
+
