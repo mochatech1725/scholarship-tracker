@@ -181,7 +181,7 @@ To use the workspace:
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Language**: TypeScript
-- **Database**: MySQL (with Knex.js ORM)
+- **Database**: MySQL (with Knex.js Query Builder)
 - **Authentication**: Auth0
 
 ### Data Scraper

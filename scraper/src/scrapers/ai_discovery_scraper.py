@@ -13,6 +13,23 @@ from dataclasses import dataclass
 from datetime import datetime
 from .base_scraper import BaseScraper
 from .ethical_crawler import EthicalCrawler, CrawlConfig
+
+# AI Discovery Scraper Configuration Constants
+# These read from the same environment variables as server/src/utils/constants.ts
+# Default values match the TypeScript constants
+MAX_SOURCES_PER_CATEGORY = int(os.getenv('AI_DISCOVERY_MAX_SOURCES_PER_CATEGORY', '5'))
+MAX_SCHOLARSHIPS_PER_SOURCE = int(os.getenv('AI_DISCOVERY_MAX_SCHOLARSHIPS_PER_SOURCE', '3'))
+MAX_GOOGLE_REQUESTS = int(os.getenv('AI_DISCOVERY_MAX_GOOGLE_REQUESTS', '20'))
+
+# Conservative rate limiting delays (in seconds)
+CONSERVATIVE_CATEGORY_DELAY = int(os.getenv('AI_DISCOVERY_CONSERVATIVE_CATEGORY_DELAY', '30'))
+CONSERVATIVE_CRAWL_DELAY = int(os.getenv('AI_DISCOVERY_CONSERVATIVE_CRAWL_DELAY', '10'))
+CONSERVATIVE_EXTRACTION_DELAY = int(os.getenv('AI_DISCOVERY_CONSERVATIVE_EXTRACTION_DELAY', '5'))
+
+# Standard rate limiting delays (in seconds)
+STANDARD_CATEGORY_DELAY = int(os.getenv('AI_DISCOVERY_STANDARD_CATEGORY_DELAY', '15'))
+STANDARD_CRAWL_DELAY = int(os.getenv('AI_DISCOVERY_STANDARD_CRAWL_DELAY', '8'))
+STANDARD_EXTRACTION_DELAY = int(os.getenv('AI_DISCOVERY_STANDARD_EXTRACTION_DELAY', '3'))
 from .source_discovery_engine import SourceDiscoveryEngine
 from .content_extraction_pipeline import ContentExtractionPipeline, ExtractedScholarship
 from .config.config_loader import SourceCategoryConfig
@@ -37,10 +54,10 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
                  openai_api_key: str,
                  google_api_key: str,
                  google_cse_id: str,
-                 max_sources_per_category: int = 5,  # Reduced from 10
-                 max_scholarships_per_source: int = 3,  # Reduced from 5
+                 max_sources_per_category: int = MAX_SOURCES_PER_CATEGORY,
+                 max_scholarships_per_source: int = MAX_SCHOLARSHIPS_PER_SOURCE,
                  conservative_rate_limiting: bool = True,
-                 max_google_requests: int = 20):  # Limit total Google API calls
+                 max_google_requests: int = MAX_GOOGLE_REQUESTS):
         
         super().__init__()
         
@@ -64,13 +81,13 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
         
         # Rate limiting delays
         if self.conservative_rate_limiting:
-            self.category_delay = 30  # 30 seconds between categories (very conservative)
-            self.crawl_delay = 10     # 10 seconds between crawls
-            self.extraction_delay = 5 # 5 seconds between extractions
+            self.category_delay = CONSERVATIVE_CATEGORY_DELAY
+            self.crawl_delay = CONSERVATIVE_CRAWL_DELAY
+            self.extraction_delay = CONSERVATIVE_EXTRACTION_DELAY
         else:
-            self.category_delay = 15  # 15 seconds between categories
-            self.crawl_delay = 8      # 8 seconds between crawls
-            self.extraction_delay = 3 # 3 seconds between extractions
+            self.category_delay = STANDARD_CATEGORY_DELAY
+            self.crawl_delay = STANDARD_CRAWL_DELAY
+            self.extraction_delay = STANDARD_EXTRACTION_DELAY
         
         # Statistics
         self.stats = DiscoveryStats(

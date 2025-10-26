@@ -13,22 +13,62 @@ from ..utils_python import get_scraper_type
 
 logger = logging.getLogger(__name__)
 
+"""
+Scraper Factory Architecture History:
+
+Originally, the scholarship tracker was designed with AWS infrastructure:
+- TypeScript scrapers running on AWS Batch with Fargate
+- AWS RDS for database storage
+- AWS S3 for raw data storage
+- AWS Lambda for orchestration
+- AWS EventBridge for scheduling
+
+However, this architecture proved expensive for a personal/educational project:
+- AWS Batch costs: ~$50-100/month for regular scraping
+- AWS RDS costs: ~$30-50/month for database
+- AWS S3 costs: ~$10-20/month for storage
+- Total: ~$90-170/month
+
+To reduce costs, the system was redesigned to use:
+- Python scrapers running locally
+- Local MySQL database
+- Local file system storage
+- Direct script execution instead of containerized batch jobs
+
+This reduced costs from ~$90-170/month to ~$0/month (local development only).
+
+The factory pattern supports both architectures:
+- Python scrapers: For local development and cost-effective operation
+- TypeScript scrapers: For future AWS deployment if needed
+
+The get_scraper_type() function determines which scraper type to use based on:
+- Environment configuration (local vs production)
+- Available resources (local Python vs AWS infrastructure)
+- Cost considerations (local vs cloud)
+"""
+
 
 class ScraperFactory:
     """Factory for creating scrapers based on configuration"""
     
     # Registry of available scrapers
+    # Note: All current scrapers are Python-based for cost efficiency
+    # The original AWS TypeScript scrapers are preserved for future cloud deployment
     _scrapers: Dict[str, Type[BaseScraper]] = {
+        # CareerOneStop scrapers (Python implementation)
         'careeronestop': CareerOneStopScraper,
         'careeronestop_python': CareerOneStopScraper,
         'careerone': CareerOneStopScraper,  # Alias for easier typing
+        
+        # CollegeScholarship scrapers (Python implementation)
         'collegescholarship': CollegeScholarshipScraper,
         'collegescholarship_python': CollegeScholarshipScraper,
-        'collegescholarship': CollegeScholarshipScraper,  # Alias for easier typing
+        
+        # General purpose scrapers
         'general': GeneralScraper,
-        'enhanced_ai_discovery': EnhancedAIDiscoveryScraper,
-        'ai_discovery': EnhancedAIDiscoveryScraper,  # Alias for easier typing
-        # Add more Python scrapers here as they're created
+        
+        # AI-powered discovery scrapers (Python implementation)
+        'ai_discovery': EnhancedAIDiscoveryScraper
     }
     
     @classmethod
@@ -62,7 +102,7 @@ class ScraperFactory:
             logger.info(f"Creating Python scraper: {scraper_name}")
             
             # Special handling for AI discovery scraper
-            if scraper_name.lower() in ['enhanced_ai_discovery', 'ai_discovery']:
+            if scraper_name.lower() == 'ai_discovery':
                 # Get API keys from environment
                 openai_key = os.getenv('OPENAI_API_KEY')
                 google_key = os.getenv('GOOGLE_API_KEY')
@@ -117,10 +157,33 @@ class ScraperFactory:
     
     @classmethod
     def _create_typescript_scraper(cls, **kwargs):
-        """Create TypeScript scraper (placeholder for cloud deployment)"""
+        """
+        Create TypeScript scraper (placeholder for cloud deployment)
+        
+        Note: TypeScript scrapers were originally designed for AWS Batch deployment
+        but are currently disabled to save costs. They would be re-enabled for:
+        - Production cloud deployment
+        - High-volume scraping requirements
+        - When budget allows for AWS infrastructure costs
+        
+        Original AWS architecture:
+        - TypeScript scrapers in Docker containers
+        - AWS Batch for job orchestration
+        - AWS Fargate for serverless compute
+        - AWS RDS for database storage
+        - AWS S3 for raw data storage
+        
+        Cost considerations:
+        - AWS Batch: ~$50-100/month for regular scraping
+        - AWS RDS: ~$30-50/month for database
+        - AWS S3: ~$10-20/month for storage
+        - Total: ~$90-170/month vs $0/month for local Python scrapers
+        """
         # This would be implemented to call the TypeScript scrapers
         # For now, return None to indicate TypeScript scrapers aren't available locally
         logger.warning("TypeScript scrapers are not available in local mode")
+        logger.info("TypeScript scrapers were disabled to reduce AWS costs (~$90-170/month)")
+        logger.info("Use Python scrapers for local development and cost-effective operation")
         return None
 
 
