@@ -38,7 +38,11 @@ class CareerOneStopScraper(BaseScraper):
         })
     
     def scrape(self) -> ScrapingResult:
-        """Main scraping method"""
+        """Entry point: paginate, parse rows, and persist scholarships.
+
+        Returns:
+            `ScrapingResult` with totals, errors, and collected scholarships.
+        """
         logger.info("Starting CareerOneStop scraping...")
         
         try:
@@ -52,7 +56,7 @@ class CareerOneStopScraper(BaseScraper):
             logger.info("Using efficient broad search approach")
             
             page = 1
-            max_pages = 3  # Get more pages since we're not searching multiple keywords
+            max_pages = self.max_pages  # Centralized default, overridable per instance
             
             while page <= max_pages:
                 try:
@@ -131,7 +135,14 @@ class CareerOneStopScraper(BaseScraper):
             )
     
     def _scrape_page(self, page: int) -> List[Scholarship]:
-        """Scrape a single page of scholarships"""
+        """Scrape a single result page and map rows to scholarships.
+
+        Parameters:
+            page: One-based page index to fetch from CareerOneStop.
+
+        Returns:
+            A list of `Scholarship` domain objects for this page.
+        """
         scholarships = []
         
         try:
@@ -177,7 +188,14 @@ class CareerOneStopScraper(BaseScraper):
         return scholarships
     
     def _parse_table_row(self, row) -> Optional[Scholarship]:
-        """Parse a table row like the TypeScript version"""
+        """Parse a HTML table row into a `Scholarship` if valid.
+
+        Parameters:
+            row: BeautifulSoup element representing a scholarship table row.
+
+        Returns:
+            A `Scholarship` if parsed correctly; otherwise None.
+        """
         try:
             cells = row.find_all('td')
             if len(cells) < 5:
@@ -258,9 +276,8 @@ class CareerOneStopScraper(BaseScraper):
             clean_organization = self._clean_text(organization)
             clean_description = self._clean_text(description)[:500]
             
-            # Create scholarship object
+            # Create scholarship object (DB will auto-assign scholarship_id)
             scholarship = Scholarship(
-                scholarship_id=self._generate_scholarship_id(clean_title, clean_organization),
                 title=clean_title[:200],
                 description=clean_description,
                 organization=clean_organization,
@@ -339,14 +356,17 @@ class CareerOneStopScraper(BaseScraper):
         except:
             return None, None
     
-    def _generate_scholarship_id(self, title: str, organization: str) -> str:
-        """Generate a unique scholarship ID"""
-        import hashlib
-        content = f"{title}-{organization}".lower()
-        return hashlib.md5(content.encode()).hexdigest()[:16]
+    
     
     def _remove_duplicates(self, scholarships: List[Scholarship]) -> List[Scholarship]:
-        """Remove duplicate scholarships"""
+        """Remove in-batch duplicates on (title, organization) heuristic.
+
+        Parameters:
+            scholarships: Collection potentially containing duplicates.
+
+        Returns:
+            A list with duplicate titles for the same organization removed.
+        """
         seen = set()
         unique = []
         

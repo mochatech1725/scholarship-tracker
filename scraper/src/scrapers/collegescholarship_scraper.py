@@ -38,7 +38,11 @@ class CollegeScholarshipScraper(BaseScraper):
         })
     
     def scrape(self) -> ScrapingResult:
-        """Main scraping method"""
+        """Entry point: paginate list pages, parse items, persist results.
+
+        Returns:
+            `ScrapingResult` with totals, errors, and collected scholarships.
+        """
         logger.info("Starting CollegeScholarship scraping...")
         
         try:
@@ -49,7 +53,7 @@ class CollegeScholarshipScraper(BaseScraper):
             errors = []
             
             page = 1
-            max_pages = 3  # Get more pages since we're not searching multiple keywords
+            max_pages = self.max_pages  # Centralized default, overridable per instance
             
             while page <= max_pages:
                 try:
@@ -128,7 +132,14 @@ class CollegeScholarshipScraper(BaseScraper):
             )
     
     def _scrape_page(self, page: int) -> List[Scholarship]:
-        """Scrape a single page of scholarships"""
+        """Scrape a single page from CollegeScholarships.org listings.
+
+        Parameters:
+            page: One-based page index. Page 1 uses the base search URL.
+
+        Returns:
+            A list of `Scholarship` domain objects for this page.
+        """
         scholarships = []
         
         try:
@@ -166,7 +177,14 @@ class CollegeScholarshipScraper(BaseScraper):
         return scholarships
     
     def _parse_row_element(self, element) -> Optional[Scholarship]:
-        """Parse a row element like the TypeScript version"""
+        """Parse a listing row element into a `Scholarship` if valid.
+
+        Parameters:
+            element: BeautifulSoup element representing a scholarship row.
+
+        Returns:
+            A `Scholarship` if parsed correctly; otherwise None.
+        """
         try:
             # Find scholarship summary and description sections
             summary = element.find('div', class_='scholarship-summary')
@@ -256,9 +274,8 @@ class CollegeScholarshipScraper(BaseScraper):
             clean_eligibility = self._clean_text(eligibility)
             clean_geographic_restrictions = self._clean_text(geographic_restrictions)
             
-            # Create scholarship object
+            # Create scholarship object (let DB auto-increment scholarship_id)
             scholarship = Scholarship(
-                scholarship_id=self._generate_scholarship_id(clean_title, "CollegeScholarships"),
                 title=clean_title[:200],
                 description=clean_description[:500] if clean_description else None,
                 organization="",  # Will be filled by detail fetching if enabled
@@ -339,14 +356,17 @@ class CollegeScholarshipScraper(BaseScraper):
         except:
             return None, None
     
-    def _generate_scholarship_id(self, title: str, organization: str) -> str:
-        """Generate a unique scholarship ID"""
-        import hashlib
-        content = f"{title}-{organization}".lower()
-        return hashlib.md5(content.encode()).hexdigest()[:16]
+    
     
     def _remove_duplicates(self, scholarships: List[Scholarship]) -> List[Scholarship]:
-        """Remove duplicate scholarships"""
+        """Remove in-batch duplicates on (title, organization) heuristic.
+
+        Parameters:
+            scholarships: Collection potentially containing duplicates.
+
+        Returns:
+            A list with duplicate titles for the same organization removed.
+        """
         seen = set()
         unique = []
         

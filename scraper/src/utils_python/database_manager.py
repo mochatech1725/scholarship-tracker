@@ -95,40 +95,31 @@ class LocalDatabaseManager(DatabaseManager):
         cursor = conn.cursor()
         
         try:
-            # Ensure scholarship has required fields
-            if not scholarship.scholarship_id:
-                scholarship.scholarship_id = self._create_scholarship_id()
-            
+            # Timestamps
             if not scholarship.created_at:
                 scholarship.created_at = datetime.now()
-            
             scholarship.updated_at = datetime.now()
             
-            # Convert to dict for database insertion
+            # Normalize dedupe key fields to avoid NULLs in DB
+            scholarship.title = (scholarship.title or "").strip()
+            scholarship.organization = (scholarship.organization or "").strip()
+            scholarship.deadline = (scholarship.deadline or "").strip()
+            
+            # Convert to dict and omit scholarship_id if None to let AUTO_INCREMENT handle it
             data = scholarship.to_dict()
+            if 'scholarship_id' in data and data['scholarship_id'] is None:
+                del data['scholarship_id']
             
-            # Check if scholarship already exists
-            cursor.execute(
-                "SELECT scholarship_id FROM scholarships WHERE scholarship_id = %s",
-                (scholarship.scholarship_id,)
+            # Build INSERT ... ON DUPLICATE KEY UPDATE using unique(title, organization, deadline)
+            placeholders = ', '.join(['%s'] * len(data))
+            columns = ', '.join(data.keys())
+            updates = ', '.join([f"{k} = VALUES({k})" for k in data.keys() if k not in ['scholarship_id', 'created_at']])
+            query = (
+                f"INSERT INTO scholarships ({columns}) VALUES ({placeholders}) "
+                f"ON DUPLICATE KEY UPDATE {updates}, updated_at = CURRENT_TIMESTAMP"
             )
-            
-            if cursor.fetchone():
-                # Update existing scholarship
-                placeholders = ', '.join([f"{k} = %s" for k in data.keys() if k != 'scholarship_id'])
-                values = [v for k, v in data.items() if k != 'scholarship_id']
-                values.append(scholarship.scholarship_id)
-                
-                query = f"UPDATE scholarships SET {placeholders} WHERE scholarship_id = %s"
-                cursor.execute(query, values)
-                logger.info(f"Updated scholarship in local DB: {scholarship.title}")
-            else:
-                # Insert new scholarship
-                placeholders = ', '.join(['%s'] * len(data))
-                columns = ', '.join(data.keys())
-                query = f"INSERT INTO scholarships ({columns}) VALUES ({placeholders})"
-                cursor.execute(query, list(data.values()))
-                logger.info(f"Inserted scholarship in local DB: {scholarship.title}")
+            cursor.execute(query, list(data.values()))
+            logger.info(f"Upserted scholarship in local DB: {scholarship.title}")
             
             conn.commit()
             return True
@@ -324,40 +315,31 @@ class ProductionDatabaseManager(DatabaseManager):
         cursor = conn.cursor()
         
         try:
-            # Ensure scholarship has required fields
-            if not scholarship.scholarship_id:
-                scholarship.scholarship_id = self._create_scholarship_id()
-            
+            # Timestamps
             if not scholarship.created_at:
                 scholarship.created_at = datetime.now()
-            
             scholarship.updated_at = datetime.now()
             
-            # Convert to dict for database insertion
+            # Normalize dedupe key fields to avoid NULLs in DB
+            scholarship.title = (scholarship.title or "").strip()
+            scholarship.organization = (scholarship.organization or "").strip()
+            scholarship.deadline = (scholarship.deadline or "").strip()
+            
+            # Convert to dict and omit scholarship_id if None to let AUTO_INCREMENT handle it
             data = scholarship.to_dict()
+            if 'scholarship_id' in data and data['scholarship_id'] is None:
+                del data['scholarship_id']
             
-            # Check if scholarship already exists
-            cursor.execute(
-                "SELECT scholarship_id FROM scholarships WHERE scholarship_id = %s",
-                (scholarship.scholarship_id,)
+            # Build INSERT ... ON DUPLICATE KEY UPDATE using unique(title, organization, deadline)
+            placeholders = ', '.join(['%s'] * len(data))
+            columns = ', '.join(data.keys())
+            updates = ', '.join([f"{k} = VALUES({k})" for k in data.keys() if k not in ['scholarship_id', 'created_at']])
+            query = (
+                f"INSERT INTO scholarships ({columns}) VALUES ({placeholders}) "
+                f"ON DUPLICATE KEY UPDATE {updates}, updated_at = CURRENT_TIMESTAMP"
             )
-            
-            if cursor.fetchone():
-                # Update existing scholarship
-                placeholders = ', '.join([f"{k} = %s" for k in data.keys() if k != 'scholarship_id'])
-                values = [v for k, v in data.items() if k != 'scholarship_id']
-                values.append(scholarship.scholarship_id)
-                
-                query = f"UPDATE scholarships SET {placeholders} WHERE scholarship_id = %s"
-                cursor.execute(query, values)
-                logger.info(f"Updated scholarship in production DB: {scholarship.title}")
-            else:
-                # Insert new scholarship
-                placeholders = ', '.join(['%s'] * len(data))
-                columns = ', '.join(data.keys())
-                query = f"INSERT INTO scholarships ({columns}) VALUES ({placeholders})"
-                cursor.execute(query, list(data.values()))
-                logger.info(f"Inserted scholarship in production DB: {scholarship.title}")
+            cursor.execute(query, list(data.values()))
+            logger.info(f"Upserted scholarship in production DB: {scholarship.title}")
             
             conn.commit()
             return True

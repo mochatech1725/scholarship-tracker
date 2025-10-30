@@ -7,7 +7,6 @@ Integrates ethical crawling, AI-powered source discovery, and content extraction
 import os
 import time
 import logging
-import hashlib
 from typing import List, Dict, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -100,7 +99,15 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
         )
     
     def scrape(self, categories: Optional[List[str]] = None) -> ScrapingResult:
-        """Main scraping method - discover sources and extract scholarships"""
+        """Discover, crawl, extract, and persist scholarships.
+
+        Parameters:
+            categories: Optional list of category IDs to focus discovery.
+
+        Returns:
+            `ScrapingResult` reporting counts, any errors, and scholarships
+            extracted and handed to the DB layer for persistence.
+        """
         
         start_time = time.time()
         logger.info("Starting enhanced AI discovery scraper")
@@ -146,7 +153,6 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
             scholarships = []
             for extracted_scholarship in extracted_scholarships:
                 scholarship = Scholarship(
-                    scholarship_id=self._generate_scholarship_id(extracted_scholarship.title, extracted_scholarship.organization or "Unknown"),
                     title=extracted_scholarship.title,
                     description=extracted_scholarship.description,
                     organization=extracted_scholarship.organization,
@@ -199,7 +205,15 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
             )
     
     def _discover_sources(self, categories: Optional[List[str]] = None) -> List:
-        """Discover scholarship sources using AI-powered discovery engine"""
+        """Delegate to discovery engine to find candidate scholarship sources.
+
+        Parameters:
+            categories: Optional subset of categories to search; falls back to
+                configuration if unspecified.
+
+        Returns:
+            A list of verified sources (engine-typed objects) to crawl next.
+        """
         
         if categories is None:
             categories = self.config.get_category_ids()
@@ -239,7 +253,14 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
         return all_sources
     
     def _crawl_sources(self, sources: List) -> List[Dict]:
-        """Crawl discovered sources to extract content"""
+        """Crawl verified sources to retrieve page content for extraction.
+
+        Parameters:
+            sources: Verified discovery results to crawl.
+
+        Returns:
+            A list of dicts with url, title, content, category, and confidence.
+        """
         
         crawled_pages = []
         
@@ -269,7 +290,15 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
         return crawled_pages
     
     def _extract_scholarships(self, crawled_pages: List[Dict]) -> List[ExtractedScholarship]:
-        """Extract scholarship data from crawled pages"""
+        """Extract structured scholarships from crawled HTML content.
+
+        Parameters:
+            crawled_pages: Page payloads returned by the crawler containing
+                the fetched content and metadata.
+
+        Returns:
+            A list of `ExtractedScholarship` ready to be mapped to DB models.
+        """
         
         all_scholarships = []
         
@@ -314,10 +343,7 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
         self.google_requests_made += 1
         logger.debug(f"Google API requests made: {self.google_requests_made}/{self.max_google_requests}")
     
-    def _generate_scholarship_id(self, title: str, organization: str) -> str:
-        """Generate a unique scholarship ID"""
-        content = f"{title}-{organization}".lower()
-        return hashlib.md5(content.encode()).hexdigest()[:16]
+    
     
     def _process_scholarships(self, scholarships: List[ExtractedScholarship]):
         """Process and save extracted scholarships"""

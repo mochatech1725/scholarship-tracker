@@ -20,7 +20,7 @@ class AcademicLevel(str, Enum):
 @dataclass
 class Scholarship:
     """Python equivalent of the TypeScript Scholarship interface"""
-    scholarship_id: Optional[str] = None
+    scholarship_id: Optional[int] = None
     title: str = ""
     description: Optional[str] = None
     organization: Optional[str] = None

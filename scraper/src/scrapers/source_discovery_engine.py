@@ -11,9 +11,17 @@ import hashlib
 import logging
 from typing import List, Dict, Optional
 from dataclasses import dataclass
-import openai
+from openai import OpenAI
 import requests
 from .config.config_loader import SourceCategoryConfig
+from .constants import (
+    MAX_GOOGLE_SEARCH_RESULTS,
+    MAX_SOURCES_PER_CATEGORY_DEFAULT,
+    GOOGLE_CSE_MAX_RESULTS,
+    GOOGLE_MAX_RETRIES,
+    GOOGLE_BACKOFF_BASE_DELAY_SEC,
+    GOOGLE_MIN_INTERVAL_BETWEEN_REQUESTS_SEC,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,17 +42,35 @@ class SearchQuery:
     category: str
     priority: int
 
+@dataclass
+class SearchResult:
+    """Typed result item from Google Custom Search"""
+    url: str
+    title: str
+    description: str
+
 class SourceDiscoveryEngine:
     """AI-powered engine for discovering new scholarship sources"""
     
     def __init__(self, openai_api_key: str, google_api_key: str, google_cse_id: str):
-        self.openai_client = openai.OpenAI(api_key=openai_api_key)
+        self.openai_client = OpenAI(api_key=openai_api_key)
         self.google_api_key = google_api_key
         self.google_cse_id = google_cse_id
         self.config = SourceCategoryConfig()
         
-    def discover_sources(self, categories: Optional[List[str]] = None, max_sources_per_category: int = 10) -> List[DiscoverySource]:
-        """Discover scholarship sources for specified categories"""
+    def discover_sources(self, categories: Optional[List[str]] = None, max_sources_per_category: int = MAX_SOURCES_PER_CATEGORY_DEFAULT) -> List[DiscoverySource]:
+        """Discover scholarship sources for specified categories.
+
+        Parameters:
+            categories: Optional list of category IDs to search. If None, all configured
+                categories from `SourceCategoryConfig` are used.
+            max_sources_per_category: Maximum number of verified/high-confidence sources
+                to retain per category (after AI verification and sorting).
+
+        Returns:
+            A list of `DiscoverySource` objects representing candidate pages that are
+            likely to directly offer scholarships (not just aggregate lists).
+        """
         if categories is None:
             categories = self.config.get_category_ids()
         
@@ -59,7 +85,7 @@ class SourceDiscoveryEngine:
             # Search for sources using each query
             category_sources = []
             for query in queries[:3]:  # Limit to top 3 queries per category
-                sources = self._search_google(query.query, max_results=5)
+                sources = self._search_google(query.query, max_results=MAX_GOOGLE_SEARCH_RESULTS)
                 
                 # Verify sources using AI
                 verified_sources = self._verify_sources(sources, category_id)
@@ -77,7 +103,15 @@ class SourceDiscoveryEngine:
         return all_sources
     
     def _generate_search_queries(self, category_id: str) -> List[SearchQuery]:
-        """Generate search queries for a category using AI"""
+        """Generate targeted Google search queries for a given category.
+
+        Parameters:
+            category_id: The category key as defined by `SourceCategoryConfig`.
+
+        Returns:
+            A list of `SearchQuery` objects (AI-generated when possible). If the AI
+            request fails, falls back to a small set of deterministic queries.
+        """
         category = self.config.get_category_by_id(category_id)
         if not category:
             return []
@@ -125,26 +159,38 @@ class SourceDiscoveryEngine:
             ]
             return [SearchQuery(query=query, category=category_id, priority=2) for query in fallback_queries]
     
-    def _search_google(self, query: str, max_results: int = 10) -> List[Dict]:
-        """Search Google Custom Search API with rate limiting and exponential backoff"""
+    def _search_google(self, query: str, max_results: int = MAX_GOOGLE_SEARCH_RESULTS) -> List[SearchResult]:
+        """Search Google Custom Search API for a single query with throttling and retries.
+
+        Parameters:
+            query: The fully formed Google query string.
+            max_results: Desired number of results to request (capped by the API limit).
+
+        Behavior:
+            - Enforces a minimum interval between calls to respect rate limits.
+            - Implements exponential backoff on HTTP 429 responses.
+
+        Returns:
+            A list of `SearchResult` items with basic metadata (url, title, description).
+        """
         url = "https://www.googleapis.com/customsearch/v1"
         params = {
             'key': self.google_api_key,
             'cx': self.google_cse_id,
             'q': query,
-            'num': min(max_results, 10)  # Google CSE max is 10
+            'num': min(max_results, GOOGLE_CSE_MAX_RESULTS)
         }
         
-        max_retries = 3
-        base_delay = 5  # Start with 5 seconds (more conservative)
+        max_retries = GOOGLE_MAX_RETRIES
+        base_delay = GOOGLE_BACKOFF_BASE_DELAY_SEC
         
         for attempt in range(max_retries):
             try:
                 # Rate limiting: wait between requests
                 if hasattr(self, '_last_google_request'):
                     time_since_last = time.time() - self._last_google_request
-                    if time_since_last < 3.0:  # More conservative: 3 seconds between requests
-                        sleep_time = 3.0 - time_since_last
+                    if time_since_last < GOOGLE_MIN_INTERVAL_BETWEEN_REQUESTS_SEC:
+                        sleep_time = GOOGLE_MIN_INTERVAL_BETWEEN_REQUESTS_SEC - time_since_last
                         logger.debug(f"Rate limiting: waiting {sleep_time:.2f} seconds")
                         time.sleep(sleep_time)
                 
@@ -164,13 +210,13 @@ class SourceDiscoveryEngine:
                 data = response.json()
                 items = data.get('items', [])
                 
-                results = []
+                results: List[SearchResult] = []
                 for item in items:
-                    results.append({
-                        'url': item.get('link', ''),
-                        'title': item.get('title', ''),
-                        'description': item.get('snippet', '')
-                    })
+                    results.append(SearchResult(
+                        url=item.get('link', ''),
+                        title=item.get('title', ''),
+                        description=item.get('snippet', '')
+                    ))
                 
                 logger.debug(f"Google search successful for query: {query[:50]}...")
                 return results
@@ -191,8 +237,17 @@ class SourceDiscoveryEngine:
         logger.error(f"Failed to search Google after {max_retries} attempts due to rate limiting")
         return []
     
-    def _verify_sources(self, sources: List[Dict], category_id: str) -> List[DiscoverySource]:
-        """Use AI to verify if sources actually offer scholarships"""
+    def _verify_sources(self, sources: List[SearchResult], category_id: str) -> List[DiscoverySource]:
+        """Use AI to verify whether search results are true scholarship providers.
+
+        Parameters:
+            sources: Search results returned by `_search_google`.
+            category_id: The category context to include in the AI prompt for relevance.
+
+        Returns:
+            A list of `DiscoverySource` entries filtered to those that the AI considers
+            likely to offer scholarships, each with a confidence score.
+        """
         category = self.config.get_category_by_id(category_id)
         category_name = category.get('name', category_id) if category else category_id
         
@@ -202,9 +257,9 @@ class SourceDiscoveryEngine:
             prompt = f"""
             Analyze this website to determine if it offers scholarships for students in {category_name}.
             
-            URL: {source['url']}
-            Title: {source['title']}
-            Description: {source['description']}
+            URL: {source.url}
+            Title: {source.title}
+            Description: {source.description}
             
             Determine if this source:
             1. Offers scholarships (not just lists other scholarships)
@@ -236,26 +291,31 @@ class SourceDiscoveryEngine:
                     
                     if result.get('offers_scholarships', False) and result.get('confidence', 0) > 0.6:
                         verified_sources.append(DiscoverySource(
-                            url=source['url'],
-                            title=source['title'],
-                            description=source['description'],
+                            url=source.url,
+                            title=source.title,
+                            description=source.description,
                             category=category_id,
                             confidence=result.get('confidence', 0.5),
                             discovered_at=time.strftime('%Y-%m-%d %H:%M:%S')
                         ))
                 
                 except json.JSONDecodeError:
-                    logger.warning(f"Could not parse AI response for {source['url']}")
+                    logger.warning(f"Could not parse AI response for {source.url}")
                     continue
                     
             except Exception as e:
-                logger.error(f"Error verifying source {source['url']}: {e}")
+                logger.error(f"Error verifying source {source.url}: {e}")
                 continue
         
         return verified_sources
     
     def get_discovery_statistics(self) -> Dict:
-        """Get statistics about the discovery engine"""
+        """Get high-level statistics about loaded discovery configuration.
+
+        Returns:
+            A dictionary including number of categories, their names, and a boolean
+            indicating whether configuration was successfully loaded.
+        """
         categories = self.config.get_all_categories()
         
         return {

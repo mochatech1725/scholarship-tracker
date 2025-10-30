@@ -12,6 +12,7 @@ from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..utils_python import Scholarship, ScrapingResult, ScrapingMetadata
+from .constants import SCRAPER_MIN_REQUEST_DELAY_SEC
 from ..utils_python.database_manager import DatabaseManagerFactory
 
 logger = logging.getLogger(__name__)
@@ -25,22 +26,34 @@ class BaseScraper(ABC):
                  jobs_table: str = "",
                  job_id: str = "",
                  environment: str = "local",
-                 raw_data_bucket: Optional[str] = None):
+                 raw_data_bucket: Optional[str] = None,
+                 max_pages: Optional[int] = None):
         self.scholarships_table = scholarships_table
         self.jobs_table = jobs_table
         self.job_id = job_id
         self.environment = environment
         self.raw_data_bucket = raw_data_bucket
+        # Pagination control (centralized). Env var SCRAPER_MAX_PAGES can set default.
+        try:
+            env_max_pages = int(os.getenv('SCRAPER_MAX_PAGES')) if os.getenv('SCRAPER_MAX_PAGES') else None
+        except Exception:
+            env_max_pages = None
+        self.max_pages = max_pages if isinstance(max_pages, int) and max_pages > 0 else (env_max_pages if isinstance(env_max_pages, int) and env_max_pages > 0 else 3)
         
         # Create database manager using factory
         self.db_manager = DatabaseManagerFactory.create_database_manager(environment)
         
         # Rate limiting
         self.last_call_time = 0
-        self.min_delay = 1.0  # Minimum delay between requests
+        self.min_delay = SCRAPER_MIN_REQUEST_DELAY_SEC  # Minimum delay between requests
     
     def _rate_limit(self):
-        """Implement rate limiting between requests"""
+        """Implement simple per-instance rate limiting between requests.
+
+        Behavior:
+            Ensures at least `self.min_delay` seconds elapse between calls by
+            sleeping the remainder when called too quickly.
+        """
         current_time = time.time()
         time_since_last = current_time - self.last_call_time
         
@@ -51,20 +64,37 @@ class BaseScraper(ABC):
         self.last_call_time = time.time()
     
     def get_db_connection(self):
-        """Get database connection from manager"""
+        """Get database connection from the database manager.
+
+        Returns:
+            A live DB connection (established on-demand) or None on failure.
+        """
         return self.db_manager.get_connection()
     
     def close_db_connection(self):
-        """Close database connection"""
+        """Close database connection if open."""
         self.db_manager.disconnect()
     
     def create_scholarship_id(self) -> str:
-        """Generate a unique scholarship ID"""
+        """Generate a unique scholarship ID.
+
+        Note:
+            Retained for compatibility, but DB AUTO_INCREMENT is the source of
+            truth for `scholarship_id` in current design.
+        """
         return f"sch_{uuid.uuid4().hex[:16]}"
     
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     def save_scholarship(self, scholarship: Scholarship) -> bool:
-        """Save scholarship to database using database manager"""
+        """Save a scholarship using the configured database manager.
+
+        Parameters:
+            scholarship: The populated `Scholarship` domain object to persist.
+
+        Returns:
+            True if the operation succeeded (insert or upsert), otherwise raises
+            an exception propagated from the DB layer.
+        """
         try:
             return self.db_manager.save_scholarship(scholarship)
         except Exception as e:
@@ -72,7 +102,19 @@ class BaseScraper(ABC):
             raise
     
     def update_job_status(self, status: str, metadata: ScrapingMetadata):
-        """Update job status using database manager"""
+        """Update job status in the backing store via the database manager.
+
+        Parameters:
+            status: One of 'running', 'completed', or 'failed'.
+            metadata: `ScrapingMetadata` with counts and context; `website` will
+                be auto-filled from the scraper class name if missing.
+        """
+        # Ensure website is populated for downstream logging/DB writes
+        try:
+            if hasattr(metadata, 'website') and (not metadata.website or not str(metadata.website).strip()):
+                metadata.website = self.__class__.__name__.replace('Scraper', '').lower()
+        except Exception:
+            pass
         self.db_manager.update_job_status(status, metadata)
     
     def clean_text(self, text: str, max_length: Optional[int] = None) -> str:
@@ -109,11 +151,22 @@ class BaseScraper(ABC):
     
     @abstractmethod
     def scrape(self) -> ScrapingResult:
-        """Main scraping method to be implemented by subclasses"""
+        """Main scraping method implemented by subclasses.
+
+        Returns:
+            A `ScrapingResult` containing scholarships, errors, and metadata.
+        """
         pass
     
     def run(self) -> ScrapingResult:
-        """Main entry point for running the scraper"""
+        """Main entry point orchestrating status updates and error handling.
+
+        Behavior:
+            - Marks job 'running' with website and job_id context
+            - Invokes `scrape()` and enriches metadata
+            - Marks job 'completed' or 'failed' accordingly and returns a
+              well-formed `ScrapingResult` on both success and failure paths.
+        """
         logger.info(f"Starting {self.__class__.__name__}")
         
         try:

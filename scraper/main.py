@@ -8,7 +8,7 @@ import sys
 import argparse
 import logging
 from typing import Optional
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -16,8 +16,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from src.scrapers.scraper_factory import ScraperOrchestrator, list_available_scrapers, run_scraper
 from src.utils_python import ScrapingResult
 
-# Load environment variables
-load_dotenv('../.env')
+# Load environment variables (robustly find repo-root .env)
+# 1) Try to discover via cwd upwards
+dotenv_path = find_dotenv('.env', usecwd=True)
+if not dotenv_path:
+    # 2) Fallback to path relative to this file: scraper/ -> repo root
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    dotenv_path = os.path.join(repo_root, '.env')
+
+load_dotenv(dotenv_path)
 
 # Configure logging
 logging.basicConfig(

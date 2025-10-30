@@ -57,12 +57,12 @@ class ScraperFactory:
     _scrapers: Dict[str, Type[BaseScraper]] = {
         # CareerOneStop scrapers (Python implementation)
         'careeronestop': CareerOneStopScraper,
-        'careeronestop_python': CareerOneStopScraper,
+        # 'careeronestop_python': CareerOneStopScraper,
         'careerone': CareerOneStopScraper,  # Alias for easier typing
         
         # CollegeScholarship scrapers (Python implementation)
         'collegescholarship': CollegeScholarshipScraper,
-        'collegescholarship_python': CollegeScholarshipScraper,
+        # 'collegescholarship_python': CollegeScholarshipScraper,
         
         # General purpose scrapers
         'general': GeneralScraper,

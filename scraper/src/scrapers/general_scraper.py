@@ -38,7 +38,11 @@ class GeneralScraper(BaseScraper):
         self.search_keywords = ['scholarship', 'financial aid', 'grant']
     
     def scrape(self) -> ScrapingResult:
-        """Main scraping method"""
+        """Entry point: search with broad keywords, parse, and persist.
+
+        Returns:
+            `ScrapingResult` with totals, errors, and collected scholarships.
+        """
         logger.info("Starting general scraping...")
         
         try:
@@ -125,7 +129,14 @@ class GeneralScraper(BaseScraper):
             )
     
     def _search_broad_keyword(self, keyword: str) -> List[Scholarship]:
-        """Search using a broad keyword and get more results per search"""
+        """Search using a broad keyword and map results to scholarships.
+
+        Parameters:
+            keyword: The broad search term (e.g., 'scholarship').
+
+        Returns:
+            A list of `Scholarship` domain objects parsed from the results.
+        """
         scholarships = []
         
         try:
@@ -164,7 +175,14 @@ class GeneralScraper(BaseScraper):
         return scholarships
     
     def _parse_scholarship_element(self, element) -> Optional[Scholarship]:
-        """Parse a single scholarship element with broader selectors"""
+        """Parse a generic scholarship element using broad CSS selectors.
+
+        Parameters:
+            element: BeautifulSoup element that may represent a scholarship.
+
+        Returns:
+            A `Scholarship` if parsed correctly; otherwise None.
+        """
         try:
             # Extract basic information with more specific selectors
             title = self._extract_text(element, ['h1', 'h2', 'h3', 'h4', 'h5', '.title', '.name', '.scholarship-title', '.scholarship-name', '.award-name'])
@@ -193,9 +211,8 @@ class GeneralScraper(BaseScraper):
             # Extract URL
             url = self._extract_url(element)
             
-            # Create scholarship object
+            # Create scholarship object (DB will auto-assign scholarship_id)
             scholarship = Scholarship(
-                scholarship_id=self._generate_scholarship_id(title, organization or "Unknown"),
                 title=title[:200],  # Limit title length
                 description=description[:500] if description else None,  # Limit description
                 organization=organization,
@@ -260,14 +277,17 @@ class GeneralScraper(BaseScraper):
         except:
             return None, None
     
-    def _generate_scholarship_id(self, title: str, organization: str) -> str:
-        """Generate a unique scholarship ID"""
-        import hashlib
-        content = f"{title}-{organization or 'Unknown'}".lower()
-        return hashlib.md5(content.encode()).hexdigest()[:16]
+    
     
     def _remove_duplicates(self, scholarships: List[Scholarship]) -> List[Scholarship]:
-        """Remove duplicate scholarships"""
+        """Remove in-batch duplicates on (title, organization) heuristic.
+
+        Parameters:
+            scholarships: Collection potentially containing duplicates.
+
+        Returns:
+            A list with duplicate titles for the same organization removed.
+        """
         seen = set()
         unique = []
         

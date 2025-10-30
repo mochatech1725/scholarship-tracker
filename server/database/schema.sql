@@ -143,5 +143,7 @@ CREATE TABLE IF NOT EXISTS scholarships (
     INDEX idx_gender (gender),
     INDEX idx_target_type (target_type),
     INDEX idx_organization (organization),
-    INDEX idx_source (source)
+    INDEX idx_source (source),
+    -- Use prefix lengths to keep index size under InnoDB limits (utf8mb4)
+    UNIQUE KEY uq_title_org_deadline (title(191), organization(191), deadline(191))
 ); 
