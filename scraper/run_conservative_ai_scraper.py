@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.scrapers.ai_discovery_scraper import EnhancedAIDiscoveryScraper
+from src.scrapers.ai_discovery_scraper import AIDiscoveryScraper
 from src.utils_python import ScrapingResult
 
 # Load environment variables
@@ -48,7 +48,7 @@ def run_conservative_ai_scraper():
     logger.info("   - Extraction delay: 5 seconds")
     
     # Create scraper with very conservative settings
-    scraper = EnhancedAIDiscoveryScraper(
+    scraper = AIDiscoveryScraper(
         openai_api_key=openai_key,
         google_api_key=google_key,
         google_cse_id=google_cse,

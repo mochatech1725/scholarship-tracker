@@ -7,7 +7,7 @@ from .base_scraper import BaseScraper
 from .careeronestop_scraper import CareerOneStopScraper
 from .collegescholarship_scraper import CollegeScholarshipScraper
 from .general_scraper import GeneralScraper
-from .ai_discovery_scraper import EnhancedAIDiscoveryScraper
+from .ai_discovery_scraper import AIDiscoveryScraper
 from ..utils_python import ScrapingResult
 from ..utils_python import get_scraper_type
 
@@ -65,10 +65,10 @@ class ScraperFactory:
         # 'collegescholarship_python': CollegeScholarshipScraper,
         
         # General purpose scrapers
-        'general': GeneralScraper,
+        # 'general': GeneralScraper,
         
         # AI-powered discovery scrapers (Python implementation)
-        'ai_discovery': EnhancedAIDiscoveryScraper
+        'ai_discovery': AIDiscoveryScraper
     }
     
     @classmethod

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Enhanced AI Discovery Scraper
+AI Discovery Scraper
 Integrates ethical crawling, AI-powered source discovery, and content extraction
 """
 
@@ -46,8 +46,8 @@ class DiscoveryStats:
     sources_by_category: Dict[str, int]
     scholarships_by_category: Dict[str, int]
 
-class EnhancedAIDiscoveryScraper(BaseScraper):
-    """Enhanced AI-powered scholarship discovery scraper"""
+class AIDiscoveryScraper(BaseScraper):
+    """AI-powered scholarship discovery scraper"""
     
     def __init__(self, 
                  openai_api_key: str,
@@ -110,7 +110,7 @@ class EnhancedAIDiscoveryScraper(BaseScraper):
         """
         
         start_time = time.time()
-        logger.info("Starting enhanced AI discovery scraper")
+        logger.info("Starting AI discovery scraper")
         
         try:
             # Stage 1: Discovery
