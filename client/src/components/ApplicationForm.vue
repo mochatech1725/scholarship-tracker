@@ -2,7 +2,7 @@
   <q-card class="q-pa-md" style="background-color: white;">
     <q-card-section>
       <ScholarshipBanner :name="scholarshipName" />
-      <q-form @submit="onSubmit" class="q-gutter-md">
+      <q-form @submit.prevent="onSubmit" class="q-gutter-md">
         <div class="row items-center justify-between q-mb-md">
           <div class="text-h6">{{ isEdit ? 'Edit' : 'Add' }} Application</div>
           <div class="row items-center">

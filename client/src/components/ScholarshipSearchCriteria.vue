@@ -67,7 +67,7 @@
         <div class="filter-section">
           <div class="filter-label">Subject Areas</div>
           <q-select
-            v-model="localSearchCriteria.subjectAreas"
+            v-model="localSearchCriteria.subject_areas"
             :options="subjectAreasOptions"
             multiple
             outlined
@@ -180,7 +180,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useUserStore } from 'src/stores/user.store'
 import { 
   academicLevelOptions, 
@@ -220,7 +220,7 @@ const localSearchCriteria = ref<SearchCriteria>({ ...props.searchCriteria })
 const activeFiltersCount = computed(() => {
   let count = 0
   if (localSearchCriteria.value.keywords) count++
-  if (localSearchCriteria.value.subjectAreas && localSearchCriteria.value.subjectAreas.length > 0) count++
+  if (localSearchCriteria.value.subject_areas && localSearchCriteria.value.subject_areas.length > 0) count++
   if (localSearchCriteria.value.academic_level) count++
   if (localSearchCriteria.value.target_type) count++
   if (localSearchCriteria.value.gender) count++
@@ -242,32 +242,47 @@ watch(localSearchCriteria, (newValue) => {
   emit('update:searchCriteria', newValue)
 }, { deep: true })
 
-const handlePopulateFromProfile = (checked: boolean) => {
-  if (checked && userStore.user?.search_preferences) {
-    const profilePrefs = userStore.user.search_preferences
-
-    // Populate filters from profile
-    localSearchCriteria.value = {
-      keywords: localSearchCriteria.value.keywords,
-      subjectAreas: profilePrefs.subject_areas || [],
-      academic_level: profilePrefs.academic_level || null,
-      target_type: profilePrefs.target_type || null,
-      gender: profilePrefs.gender || null,
-      ethnicity: profilePrefs.ethnicity || null,
-      geographic_restrictions: null, 
-      essay_required: profilePrefs.essay_required || null,
-      recommendation_required: profilePrefs.recommendation_required || null
+const ensureUserPreferences = async () => {
+  if (!userStore.user) {
+    try {
+      await userStore.getUserProfile()
+    } catch (error) {
+      console.error('Failed to load user profile for search preferences:', error)
     }
-  } else if (!checked) {
-    // Clear all filters when unchecked
+  }
+}
+
+const handlePopulateFromProfile = async (checked: boolean) => {
+  if (!checked) {
     clearAllFilters()
+    return
+  }
+
+  await ensureUserPreferences()
+
+  if (!userStore.user?.search_preferences) {
+    return
+  }
+
+  const profilePrefs = userStore.user.search_preferences
+
+  localSearchCriteria.value = {
+    keywords: localSearchCriteria.value.keywords,
+    subject_areas: profilePrefs.subject_areas ?? [],
+    academic_level: profilePrefs.academic_level ?? null,
+    target_type: profilePrefs.target_type ?? null,
+    gender: profilePrefs.gender ?? null,
+    ethnicity: profilePrefs.ethnicity ?? null,
+    geographic_restrictions: null,
+    essay_required: profilePrefs.essay_required ?? null,
+    recommendation_required: profilePrefs.recommendation_required ?? null
   }
 }
 
 const clearAllFilters = () => {
   localSearchCriteria.value = {
     keywords: '',
-    subjectAreas: [],
+    subject_areas: [],
     academic_level: null,
     target_type: null,
     gender: null,
@@ -278,6 +293,10 @@ const clearAllFilters = () => {
   }
   populateFromProfile.value = false
 }
+
+onMounted(async () => {
+  await ensureUserPreferences()
+})
 
 // Expose methods and computed properties to parent components
 defineExpose({

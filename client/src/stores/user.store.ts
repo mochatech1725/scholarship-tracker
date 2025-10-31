@@ -1,5 +1,12 @@
 import { defineStore } from 'pinia'
-import type { User } from 'src/shared-types'
+import type { User, UserSearchPreferences, SubjectArea } from 'src/shared-types'
+import {
+  subjectAreasOptions,
+  academicLevelOptions,
+  targetTypeOptions,
+  genderOptions,
+  ethnicityOptions
+} from 'src/shared-types'
 import type { RegisterData, Auth0User } from 'src/types/index.ts'
 import { apiService } from 'src/services/api.service'
 
@@ -85,14 +92,113 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    setUser(backendUser: User) {
+    setUser(backendUser: User | (User & { searchPreferences?: unknown })) {
       try {
-        const user: User = {
-          ...backendUser
+        const ensureSubjectAreas = (value: unknown): SubjectArea[] => {
+          if (!value) return []
+
+          const list = Array.isArray(value)
+            ? value
+            : typeof value === 'string'
+              ? value.split(',').map(item => item.trim()).filter(Boolean)
+              : []
+
+          return list.filter((item): item is SubjectArea =>
+            typeof item === 'string' && subjectAreasOptions.includes(item as SubjectArea)
+          )
         }
 
-        this.user = user
-        return user
+        const ensureOption = <T extends readonly string[]>(value: unknown, options: T): T[number] | undefined => {
+          if (typeof value !== 'string') return undefined
+          return options.includes(value as T[number]) ? (value as T[number]) : undefined
+        }
+
+        const ensureBoolean = (value: unknown): boolean | undefined => {
+          if (typeof value === 'boolean') return value
+          if (value === null || value === undefined) return undefined
+          if (value === 'true') return true
+          if (value === 'false') return false
+          return undefined
+        }
+
+        const normalizeSearchPreferences = (prefs: unknown): UserSearchPreferences | undefined => {
+          if (!prefs || typeof prefs !== 'object') return undefined
+
+          const source = prefs as Record<string, unknown>
+
+          const subjectAreas = source.subject_areas
+          const academicLevel = source.academic_level
+          const targetType = source.target_type
+          const gender = source.gender
+          const ethnicity = source.ethnicity
+          const essayRequired = source.essay_required
+          const recommendationRequired = source.recommendation_required
+
+          const normalized: UserSearchPreferences = {
+            user_id: (source.user_id as number) ?? (backendUser as User).user_id,
+            subject_areas: ensureSubjectAreas(subjectAreas)
+          }
+
+          const normalizedAcademicLevel = ensureOption(academicLevel, academicLevelOptions)
+          if (normalizedAcademicLevel) {
+            normalized.academic_level = normalizedAcademicLevel
+          }
+
+          const normalizedTargetType = ensureOption(targetType, targetTypeOptions)
+          if (normalizedTargetType) {
+            normalized.target_type = normalizedTargetType
+          }
+
+          const normalizedGender = ensureOption(gender, genderOptions)
+          if (normalizedGender) {
+            normalized.gender = normalizedGender
+          }
+
+          const normalizedEthnicity = ensureOption(ethnicity, ethnicityOptions)
+          if (normalizedEthnicity) {
+            normalized.ethnicity = normalizedEthnicity
+          }
+
+          const normalizedEssayRequired = ensureBoolean(essayRequired)
+          if (normalizedEssayRequired !== undefined) {
+            normalized.essay_required = normalizedEssayRequired
+          }
+
+          const normalizedRecommendationRequired = ensureBoolean(recommendationRequired)
+          if (normalizedRecommendationRequired !== undefined) {
+            normalized.recommendation_required = normalizedRecommendationRequired
+          }
+
+          const createdAt = source.created_at
+          if (createdAt instanceof Date) {
+            normalized.created_at = createdAt
+          }
+
+          const updatedAt = source.updated_at
+          if (updatedAt instanceof Date) {
+            normalized.updated_at = updatedAt
+          }
+
+          return normalized
+        }
+
+        const searchPrefsSource = (backendUser as unknown as Record<string, unknown>).search_preferences
+
+        const normalizedPrefs = normalizeSearchPreferences(searchPrefsSource)
+
+        const normalizedUser: User = {
+          ...(backendUser as User)
+        }
+
+        // Remove any existing search preference fields so we can set the normalized version
+        delete (normalizedUser as unknown as Record<string, unknown>).search_preferences
+
+        if (normalizedPrefs) {
+          normalizedUser.search_preferences = normalizedPrefs
+        }
+
+        this.user = normalizedUser
+        return normalizedUser
       } catch (error) {
         console.error('Failed to load user from backend:', error)
         throw error

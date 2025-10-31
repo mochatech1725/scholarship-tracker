@@ -9,7 +9,7 @@ const mapSearchPreferencesRow = (row: any | undefined | null): UserSearchPrefere
   }
 
   let subjectAreas: string[] | null = null;
-  const rawSubjectAreas = row.subject_areas ?? row.subjectAreas;
+  const rawSubjectAreas = row.subject_areas;
 
   if (rawSubjectAreas) {
     if (Array.isArray(rawSubjectAreas)) {
@@ -31,8 +31,10 @@ const mapSearchPreferencesRow = (row: any | undefined | null): UserSearchPrefere
     subject_areas: subjectAreas ?? [],
     gender: row.gender ?? null,
     ethnicity: row.ethnicity ?? null,
+    min_award: row.min_award ?? null,
+    max_award: row.max_award ?? null,
     essay_required: row.essay_required ?? null,
-    recommendation_required: row.recommendation_required ?? row.recommendation_required ?? null,
+    recommendation_required: row.recommendation_required ?? null,
     academic_level: row.academic_level ?? null,
     created_at: row.created_at ?? null,
     updated_at: row.updated_at ?? null
@@ -191,8 +193,10 @@ export const saveUserProfile = async (req: Request, res: Response) => {
         gender: searchPrefs.gender ?? null,
         ethnicity: searchPrefs.ethnicity ?? null,
         academic_gpa: searchPrefs.academic_gpa ?? null,
+        min_award: searchPrefs.min_award ?? null,
+        max_award: searchPrefs.max_award ?? null,
         essay_required: searchPrefs.essay_required ?? null,
-        recommendation_required: searchPrefs.recommendation_required ?? searchPrefs.recommendation_required ?? null,
+        recommendation_required: searchPrefs.recommendation_required ?? null,
         academic_level: searchPrefs.academic_level ?? null
       };
 

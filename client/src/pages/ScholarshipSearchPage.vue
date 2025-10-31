@@ -101,8 +101,8 @@ function validateAndCleanSearchCriteria(
   const cleaned: SearchCriteria = {
     ...criteria,
     keywords: trimOrNull(criteria.keywords) || '',
-    subjectAreas: Array.isArray(criteria.subjectAreas)
-      ? criteria.subjectAreas.map((s: string) => (typeof s === 'string' ? s.trim() : s))
+    subject_areas: Array.isArray(criteria.subject_areas)
+      ? criteria.subject_areas.map((s: string) => (typeof s === 'string' ? s.trim() : s))
       : [],
     academic_level: trimOrNull(criteria.academic_level),
     target_type: trimOrNull(criteria.target_type),
@@ -112,10 +112,10 @@ function validateAndCleanSearchCriteria(
     ...(criteria.academic_gpa !== null && { academic_gpa: criteria.academic_gpa }),
     essay_required: criteria.essay_required,
     recommendation_required: criteria.recommendation_required,
-    ...(criteria.deadlineRange && {
-      deadlineRange: {
-        ...(criteria.deadlineRange.startDate && { startDate: criteria.deadlineRange.startDate }),
-        ...(criteria.deadlineRange.endDate && { endDate: criteria.deadlineRange.endDate })
+    ...(criteria.deadline_range && {
+      deadline_range: {
+        ...(criteria.deadline_range.start_date && { start_date: criteria.deadline_range.start_date }),
+        ...(criteria.deadline_range.end_date && { end_date: criteria.deadline_range.end_date })
       }
     })
   };
@@ -123,26 +123,26 @@ function validateAndCleanSearchCriteria(
   // Validate dates if present
   const invalidFields: string[] = [];
   let error: string | undefined;
-  if (cleaned.deadlineRange) {
-    const { startDate, endDate } = cleaned.deadlineRange;
+  if (cleaned.deadline_range) {
+    const { start_date, end_date } = cleaned.deadline_range;
     let start: Date | undefined, end: Date | undefined;
-    if (startDate) {
-      start = new Date(startDate);
+    if (start_date) {
+      start = new Date(start_date);
       if (isNaN(start.getTime())) {
         error = 'Invalid start date format.';
         invalidFields.push('deadlineRange.startDate');
       }
     }
-    if (endDate) {
-      end = new Date(endDate);
+    if (end_date) {
+      end = new Date(end_date);
       if (isNaN(end.getTime())) {
         error = error ? error + ' Invalid end date format.' : 'Invalid end date format.';
-        invalidFields.push('deadlineRange.endDate');
+        invalidFields.push('deadline_range.end_date');
       }
     }
     if (start && end && end <= start) {
       error = 'End date must be after start date.';
-      invalidFields.push('deadlineRange.endDate', 'deadlineRange.startDate');
+      invalidFields.push('deadline_range.end_date', 'deadline_range.start_date');
     }
   }
   if (error) {
@@ -159,7 +159,7 @@ const searchResults = ref([])
 
 const defaultSearchCriteria: SearchCriteria = {
   keywords: '',
-  subjectAreas: [],
+  subject_areas: [],
   academic_level: null,
   target_type: null,
   gender: null,

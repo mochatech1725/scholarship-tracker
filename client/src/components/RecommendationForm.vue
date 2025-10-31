@@ -69,23 +69,19 @@
 
           <div class="col-12 col-md-6">
             <div class="form-label">Due Date</div>
-            <q-input
-              v-model="dueDateString"
-              type="date"
-              flat
-              dense
-              class="q-mb-sm"
+            <DateField
+              :model-value="form.due_date ?? null"
+              label="Select due date"
+              @update:model-value="handleDueDateChange"
             />
           </div>
 
           <div class="col-12 col-md-6">
             <div class="form-label">Submitted Date</div>
-            <q-input
-              v-model="submittedAtString"
-              type="date"
-              flat
-              dense
-              class="q-mb-sm"
+            <DateField
+              :model-value="form.submitted_at ?? null"
+              label="Select submitted date"
+              @update:model-value="handleSubmittedAtChange"
             />
           </div>
         </div>
@@ -95,10 +91,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, onUnmounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import type { Recommendation, Application, Recommender } from 'src/shared-types'
 import ScholarshipBanner from 'components/ScholarshipBanner.vue'
+import DateField from 'components/DateField.vue'
 
 const $q = useQuasar()
 
@@ -130,43 +127,6 @@ const form = ref<Recommendation>({
 const originalFormData = ref<Recommendation | null>(null)
 const originalSelectedRecommenderId = ref<string | null>(null)
 const isInitialized = ref(false)
-
-// Computed property for due date string
-const dueDateString = computed({
-  get() {
-    if (!form.value.due_date) return ''
-    try {
-      const dueDate = form.value.due_date
-      const dateObj = dueDate instanceof Date
-        ? dueDate
-        : new Date(dueDate)
-      return dateObj.toISOString().split('T')[0]
-    } catch {
-      return ''
-    }
-  },
-  set(value: string) {
-    form.value.due_date = value ? new Date(value) : null
-  }
-})
-
-// Computed property for submitted at string
-const submittedAtString = computed({
-  get() {
-    if (!form.value.submitted_at) return ''
-    try {
-      const dateObj = typeof form.value.submitted_at === 'string' 
-        ? new Date(form.value.submitted_at) 
-        : form.value.submitted_at
-      return dateObj.toISOString().split('T')[0]
-    } catch {
-      return ''
-    }
-  },
-  set(value: string) {
-    form.value.submitted_at = value ? new Date(value) : null
-  }
-})
 
 // Track if form is dirty (has been modified)
 const isFormDirty = computed(() => {
@@ -228,6 +188,14 @@ const onSubmit = () => {
   originalFormData.value = { ...form.value }
   originalSelectedRecommenderId.value = selectedRecommenderId.value
   emit('submit', form.value)
+}
+
+const handleDueDateChange = (value: Date | null) => {
+  form.value.due_date = value
+}
+
+const handleSubmittedAtChange = (value: Date | null) => {
+  form.value.submitted_at = value
 }
 
 // Handle ESC key press

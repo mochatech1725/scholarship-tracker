@@ -10,7 +10,15 @@
       />
     </div>
 
+    <div v-if="!hasApplication" class="q-mt-lg">
+      <q-card flat bordered class="q-pa-lg text-center">
+        <div class="text-subtitle1 q-mb-sm">Select an application to manage essays.</div>
+        <div class="text-body2 text-grey-7">Return to Applications and open an application to view or edit its essays.</div>
+      </q-card>
+    </div>
+
     <q-table
+      v-else
       :rows="essays"
       :columns="columns"
       row-key="essay_id"
@@ -60,7 +68,7 @@
 
         <q-card-section>
           <EssayForm
-            :application="application"
+            :application="activeApplication"
             :essay="editingEssay"
             @submit="handleFormSubmit"
             @cancel="closeForm"
@@ -87,14 +95,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useApplicationStore } from 'src/stores/application.store'
 import type { Essay, Application } from 'src/shared-types'
 import EssayForm from 'src/components/EssayForm.vue'
 
 const props = defineProps<{
-  application: Application
+  application?: Application | null
 }>()
 
 const $q = useQuasar()
@@ -106,6 +114,8 @@ const selectedEssay = ref<Essay | null>(null)
 const showForm = ref(false)
 const editingEssay = ref<Essay | null>(null)
 
+const activeApplication = computed<Application | null>(() => props.application ?? null)
+
 const columns = [
   { name: 'theme', label: 'Theme', field: 'theme', align: 'left' as const },
   { name: 'count', label: 'Count', field: 'count', align: 'left' as const },
@@ -114,16 +124,15 @@ const columns = [
   { name: 'actions', label: 'Actions', field: 'actions', align: 'center' as const }
 ]
 
+const hasApplication = computed(() => !!activeApplication.value?.application_id)
+
 const loadEssays = () => {
-  if (!props.application?.application_id) {
-    $q.notify({
-      type: 'negative',
-      message: 'No application provided'
-    })
+  if (!activeApplication.value?.application_id) {
+    essays.value = []
     return
   }
 
-  essays.value = props.application.essays || []
+  essays.value = activeApplication.value.essays || []
 }
 
 const confirmDelete = (essay: Essay) => {
@@ -132,16 +141,19 @@ const confirmDelete = (essay: Essay) => {
 }
 
 const handleDelete = async () => {
-  if (!selectedEssay.value?.essay_id || !props.application.application_id) return
+  if (!selectedEssay.value?.essay_id || !activeApplication.value?.application_id) return
 
   try {
-    const updatedEssays = props.application.essays?.filter(essay => essay.essay_id !== selectedEssay.value?.essay_id) || []
-    const updatedApplication = {
-      ...props.application,
+    const application = activeApplication.value
+    if (!application?.application_id) return
+
+    const updatedEssays = application.essays?.filter(essay => essay.essay_id !== selectedEssay.value?.essay_id) || []
+    const updatedApplication: Application = {
+      ...application,
       essays: updatedEssays
     }
-    
-    await applicationStore.updateApplication(props.application.application_id, updatedApplication)
+
+    await applicationStore.updateApplication(application.application_id, updatedApplication)
     
     $q.notify({
       color: 'positive',
@@ -160,6 +172,14 @@ const handleDelete = async () => {
 }
 
 const handleEdit = (essay: Essay | null) => {
+  if (!hasApplication.value) {
+    $q.notify({
+      type: 'negative',
+      message: 'Select an application before managing essays'
+    })
+    return
+  }
+
   editingEssay.value = essay
   showForm.value = true
 }

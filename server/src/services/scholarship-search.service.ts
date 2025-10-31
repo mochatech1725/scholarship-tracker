@@ -3,7 +3,7 @@ import { Scholarship } from '../shared-types/scholarship.types.js';
 import { SearchCriteria, SearchOptions } from '../shared-types/scholarship-search.types.js';
 
 // Use a local type to add relevanceScore for in-memory operations
- 
+
 interface ScoredScholarship extends Scholarship { relevanceScore?: number; }
 
 export class ScholarshipSearchService {
@@ -237,8 +237,8 @@ export class ScholarshipSearchService {
     const terms: string[] = [];
 
     // Add subject areas
-    if (criteria.subjectAreas && criteria.subjectAreas.length > 0) {
-      terms.push(...criteria.subjectAreas);
+    if (criteria.subject_areas && criteria.subject_areas.length > 0) {
+      terms.push(...criteria.subject_areas);
     }
 
     // Add target type (if not 'Both')
@@ -275,7 +275,7 @@ export class ScholarshipSearchService {
 
     if (criteria.keywords) filters.push(`Keywords: ${criteria.keywords}`);
     if (criteria.academic_level) filters.push(`Academic Level: ${criteria.academic_level}`);
-    if (criteria.subjectAreas?.length) filters.push(`Subjects: ${criteria.subjectAreas.join(', ')}`);
+    if (criteria.subject_areas?.length) filters.push(`Subjects: ${criteria.subject_areas.join(', ')}`);
     if (criteria.target_type && criteria.target_type !== 'Both') filters.push(`Target Type: ${criteria.target_type}`);
     if (criteria.gender) filters.push(`Gender: ${criteria.gender}`);
     if (criteria.ethnicity) filters.push(`Ethnicity: ${criteria.ethnicity}`);
