@@ -1,12 +1,11 @@
 import os
 import logging
 from typing import Dict, Type, Optional
-from abc import ABC
 
 from .base_scraper import BaseScraper
 from .careeronestop_scraper import CareerOneStopScraper
 from .collegescholarship_scraper import CollegeScholarshipScraper
-from .general_scraper import GeneralScraper
+# from .general_scraper import GeneralScraper
 from .ai_discovery_scraper import AIDiscoveryScraper
 from ..utils_python import ScrapingResult
 from ..utils_python import get_scraper_type
@@ -57,15 +56,9 @@ class ScraperFactory:
     _scrapers: Dict[str, Type[BaseScraper]] = {
         # CareerOneStop scrapers (Python implementation)
         'careeronestop': CareerOneStopScraper,
-        # 'careeronestop_python': CareerOneStopScraper,
-        'careerone': CareerOneStopScraper,  # Alias for easier typing
         
         # CollegeScholarship scrapers (Python implementation)
         'collegescholarship': CollegeScholarshipScraper,
-        # 'collegescholarship_python': CollegeScholarshipScraper,
-        
-        # General purpose scrapers
-        # 'general': GeneralScraper,
         
         # AI-powered discovery scrapers (Python implementation)
         'ai_discovery': AIDiscoveryScraper
@@ -149,10 +142,9 @@ class ScraperFactory:
             logger.error(f"   Available scrapers: {', '.join(available_scrapers)}")
             logger.error(f"   Try: python main.py --list")
             logger.error(f"   Or use one of these common names:")
-            logger.error(f"     - 'careerone' (alias for careeronestop_python)")
-            logger.error(f"     - 'collegescholarship' (alias for collegescholarship_python)")
-            logger.error(f"     - 'general' (general scraper)")
-            logger.error(f"     - 'ai_discovery' (AI discovery scraper)")
+            logger.error(f"     - 'careeronestop' (CareerOneStop)")
+            logger.error(f"     - 'collegescholarship' (CollegeScholarship)")
+            logger.error(f"     - 'ai_discovery' (AI Discovery)")
             return None
     
     @classmethod

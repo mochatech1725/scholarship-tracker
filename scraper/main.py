@@ -100,9 +100,9 @@ def run_single_scraper(scraper_name: str, environment: str = "local") -> Scrapin
         if "Could not create scraper" in str(result.errors):
             logger.error(f"   💡 Try: python main.py --list")
             logger.error(f"   💡 Common scraper names:")
-            logger.error(f"      - 'careerone' (CareerOneStop)")
-            logger.error(f"      - 'college' (CollegeScholarship)")
-            logger.error(f"      - 'general' (General scraper)")
+            logger.error(f"      - 'careeronestop' (CareerOneStop)")
+            logger.error(f"      - 'collegescholarship' (CollegeScholarship)")
+            logger.error(f"      - 'ai_discovery' (AI Discovery)")
     
         for error in result.errors:
             logger.error(f"   Error: {error}")
@@ -148,15 +148,17 @@ def main():
         description='Python Scholarship Scraper',
         epilog="""
 Examples:
-  python main.py --scraper careerone --environment local
-  python main.py --scraper college --environment local  
-  python main.py --scraper general --environment local
+  python main.py --scraper careeronestop --environment local
+  python main.py --scraper collegescholarship --environment local  
+  python main.py --scraper ai_discovery --environment local
   python main.py --list
   python main.py --all --environment local
+  python main.py --lint
+  python main.py --lint-fix
         """
     )
     parser.add_argument('--scraper', '-s', 
-                       help='Name of the scraper to run (e.g., careerone, college, general, ai_discovery)')
+                       help='Name of the scraper to run (e.g., careeronestop, collegescholarship, ai_discovery)')
     parser.add_argument('--all', '-a', 
                        action='store_true',
                        help='Run all available scrapers')
@@ -170,12 +172,44 @@ Examples:
     parser.add_argument('--setup', 
                        action='store_true',
                        help='Set up local development environment')
+    parser.add_argument('--lint', 
+                       action='store_true',
+                       help='Run linter (ruff) to check for unused variables, functions, and code quality issues')
+    parser.add_argument('--lint-fix', 
+                       action='store_true',
+                       help='Run linter and automatically fix issues where possible')
     
     args = parser.parse_args()
     
     # Set up local environment if requested
     if args.setup:
         setup_local_environment()
+        return
+    
+    # Run linter if requested
+    if args.lint or args.lint_fix:
+        import subprocess
+        logger.info("Running linter (ruff)...")
+        try:
+            cmd = ['ruff', 'check']
+            if args.lint_fix:
+                cmd.append('--fix')
+            cmd.append('.')
+            result = subprocess.run(cmd, cwd=os.path.dirname(os.path.abspath(__file__)))
+            if result.returncode == 0:
+                logger.info("✅ No linting issues found!")
+            else:
+                logger.warning("⚠️  Some linting issues found. See above for details.")
+                if not args.lint_fix:
+                    logger.info("💡 Run with --lint-fix to automatically fix issues where possible")
+                exit(result.returncode)
+        except FileNotFoundError:
+            logger.error("ruff is not installed. Install it with: pip install ruff")
+            logger.info("Or run the lint script: ./scripts/lint.sh")
+            exit(1)
+        except Exception as e:
+            logger.error(f"Error running linter: {e}")
+            exit(1)
         return
     
     # List available scrapers

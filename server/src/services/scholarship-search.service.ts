@@ -3,7 +3,7 @@ import { Scholarship } from '../shared-types/scholarship.types.js';
 import { SearchCriteria, SearchOptions } from '../shared-types/scholarship-search.types.js';
 
 // Use a local type to add relevanceScore for in-memory operations
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+ 
 interface ScoredScholarship extends Scholarship { relevanceScore?: number; }
 
 export class ScholarshipSearchService {

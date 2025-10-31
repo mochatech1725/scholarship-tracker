@@ -21,9 +21,13 @@ const convertScholarshipItems = (scholarships: Scholarship[]): Scholarship[] => 
     let eligibility = scholarship.eligibility;
     if (eligibility && typeof eligibility === 'object') {
       if (Array.isArray(eligibility)) {
-        eligibility = (eligibility as any[]).join(', ');
+        // Convert array to comma-separated string
+        eligibility = (eligibility as unknown[]).map(item => String(item)).join(', ');
       } else {
-        eligibility = Object.values(eligibility as Record<string, any>).join(', ');
+        // Convert object values to comma-separated string
+        eligibility = Object.values(eligibility as Record<string, unknown>)
+          .map(value => String(value))
+          .join(', ');
       }
     }
     return {

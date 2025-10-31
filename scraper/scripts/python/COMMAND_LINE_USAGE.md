@@ -9,7 +9,6 @@ cd scraper/scripts/python
 
 # Run any scraper
 ./run_scraper.sh --scraper careerone --environment local
-./run_scraper.sh --scraper general --environment local
 
 # List available scrapers
 ./run_scraper.sh --list

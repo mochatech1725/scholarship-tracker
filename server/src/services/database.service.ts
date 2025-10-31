@@ -1,4 +1,4 @@
-import knex, { Knex } from 'knex';
+import { Knex } from 'knex';
 import { SearchCriteria } from '../shared-types/scholarship-search.types.js';
 import { Scholarship } from '../shared-types/scholarship.types.js';
 import { getKnex } from '../config/database.config.js';

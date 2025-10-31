@@ -8,6 +8,8 @@
     "start": "node dist/index.js",
     "dev": "nodemon",
     "build": "tsc",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
     "test": "jest",
     "token": "node scripts/get-auth0-token.js"
   },
@@ -26,13 +28,17 @@
     "puppeteer": "^24.11.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.14.0",
     "@types/cheerio": "^0.22.35",
     "@types/cors": "^2.8.18",
     "@types/express": "^4.17.22",
     "@types/morgan": "^1.9.10",
     "@types/node": "^20.17.52",
+    "eslint": "^9.14.0",
+    "globals": "^15.12.0",
     "nodemon": "^3.0.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.18.2"
   }
 }
