@@ -36,7 +36,6 @@ export const create = async (req: Request, res: Response) => {
       .insert({
         application_id: recommendationData.application_id,
         recommender_id: recommendationData.recommender_id,
-        content: recommendationData.content ?? null,
         due_date: recommendationData.due_date ?? undefined,
         submitted_at: recommendationData.submitted_at ?? undefined,
         status: recommendationData.status

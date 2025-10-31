@@ -151,59 +151,32 @@ const loadRecommendations = async () => {
   recommendations.value = props.application?.recommendations || []
 }
 
-const sanitizeDate = (value: Recommendation['due_date']): string | null | undefined => {
-  if (value instanceof Date) {
-    return value.toISOString().split('T')[0]
-  }
-
-  if (typeof value === 'string') {
-    return value.length > 0 ? value : null
-  }
-
-  return null
-}
-
-const sanitizeTimestamp = (value: Recommendation['submitted_at']): string | null | undefined => {
-  if (value instanceof Date) {
-    return value.toISOString()
-  }
-
-  if (typeof value === 'string') {
-    return value.length > 0 ? value : null
-  }
-
-  return null
-}
-
-type RecommendationPayload = {
-  application_id: number
-  recommender_id: number
-  status: Recommendation['status']
-  due_date?: string | Date | null
-  submitted_at?: string | Date | null
-}
-
-const toApiPayload = (recommendation: Recommendation): RecommendationPayload => {
-  const applicationId = props.application?.application_id || recommendation.application_id
-  const dueDate = sanitizeDate(recommendation.due_date)
-  const submittedAt = sanitizeTimestamp(recommendation.submitted_at)
-
-  const payload: RecommendationPayload = {
-    application_id: applicationId,
+const toUpdatePayload = (recommendation: Recommendation): Partial<Recommendation> => {
+  const payload: Partial<Recommendation> = {
     recommender_id: recommendation.recommender_id,
     status: recommendation.status
   }
 
-  if (dueDate != null) {
-    payload.due_date = dueDate
+  if ('application_id' in recommendation) {
+    payload.application_id = recommendation.application_id
   }
 
-  if (submittedAt != null) {
-    payload.submitted_at = submittedAt
-  }
+  payload.due_date = recommendation.due_date ?? null
+  payload.submitted_at = recommendation.submitted_at ?? null
 
   return payload
 }
+
+const toCreatePayload = (
+  recommendation: Recommendation,
+  applicationId: number
+): Omit<Recommendation, 'recommendation_id' | 'created_at' | 'updated_at'> => ({
+  application_id: applicationId,
+  recommender_id: recommendation.recommender_id,
+  status: recommendation.status,
+  due_date: recommendation.due_date ?? null,
+  submitted_at: recommendation.submitted_at ?? null
+})
 
 const editRecommendation = (recommendation: Recommendation) => {
   editingRecommendation.value = recommendation
@@ -221,7 +194,7 @@ const handleSubmit = async (form: Recommendation) => {
     if (editingRecommendation.value && editingRecommendation.value.recommendation_id) {
       const updated = await apiService.updateRecommendation(
         editingRecommendation.value.recommendation_id,
-        toApiPayload(form)
+        toUpdatePayload(form)
       )
 
       recommendations.value = recommendations.value.map(rec =>
@@ -233,10 +206,15 @@ const handleSubmit = async (form: Recommendation) => {
         message: 'Recommendation updated successfully'
       })
     } else if (props.application?.application_id) {
-      const created = await apiService.createRecommendation(toApiPayload({
-        ...form,
-        application_id: props.application.application_id
-      }))
+      const created = await apiService.createRecommendation(
+        toCreatePayload(
+          {
+            ...form,
+            application_id: props.application.application_id
+          },
+          props.application.application_id
+        )
+      )
 
       recommendations.value = [...recommendations.value, created]
 

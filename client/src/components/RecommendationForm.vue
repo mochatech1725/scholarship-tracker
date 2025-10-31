@@ -136,16 +136,17 @@ const dueDateString = computed({
   get() {
     if (!form.value.due_date) return ''
     try {
-      const dateObj = typeof form.value.due_date === 'string' 
-        ? new Date(form.value.due_date) 
-        : form.value.due_date
+      const dueDate = form.value.due_date
+      const dateObj = dueDate instanceof Date
+        ? dueDate
+        : new Date(dueDate)
       return dateObj.toISOString().split('T')[0]
     } catch {
       return ''
     }
   },
   set(value: string) {
-    form.value.due_date = value || null
+    form.value.due_date = value ? new Date(value) : null
   }
 })
 
@@ -237,7 +238,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const getDefaultFormData = (): Omit<Recommendation, 'recommendation_id'> => {
+const getDefaultFormData = (): Recommendation => {
   return {
     application_id: props.application?.application_id || 0,
     recommender_id: 0,
@@ -251,15 +252,26 @@ const getDefaultFormData = (): Omit<Recommendation, 'recommendation_id'> => {
 
 const initializeFormWithData = () => {
   if (props.recommendation) {
-    const recommendationData = {
+    const recommendationData: Recommendation = {
       application_id: props.application?.application_id || 0,
       recommender_id: props.recommendation.recommender_id,
-      due_date: props.recommendation.due_date || null,
-      submitted_at: props.recommendation.submitted_at || new Date(),
       status: props.recommendation.status,
       created_at: props.recommendation.created_at || new Date(),
       updated_at: props.recommendation.updated_at || new Date()
     }
+
+    recommendationData.due_date = props.recommendation.due_date
+      ? (props.recommendation.due_date instanceof Date
+          ? props.recommendation.due_date
+          : new Date(props.recommendation.due_date))
+      : null
+
+    recommendationData.submitted_at = props.recommendation.submitted_at
+      ? (props.recommendation.submitted_at instanceof Date
+          ? props.recommendation.submitted_at
+          : new Date(props.recommendation.submitted_at))
+      : null
+
     originalFormData.value = { ...recommendationData }
     form.value = recommendationData
     
