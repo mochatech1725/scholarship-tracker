@@ -34,7 +34,6 @@ The Scholarship Scraper is a Python-based system designed to collect scholarship
 #### Web Scraping
 - **CareerOneStop**: Web crawling for CareerOneStop.org using BeautifulSoup
 - **CollegeScholarship**: Web crawling for CollegeScholarships.com
-- **General Scraper**: AI-powered intelligent search and extraction
 - **AI Discovery**: OpenAI-powered discovery of new scholarship sources
 - **Ethical Crawler**: Respectful web crawling with robots.txt compliance
 
@@ -54,10 +53,6 @@ The Scholarship Scraper is a Python-based system designed to collect scholarship
 │   ├── 2024/01/15/
 │   │   ├── 2024-01-15T10-30-00-123Z-abc12345.html
 │   │   └── 2024-01-15T10-30-00-123Z-abc12345-metadata.json
-├── GeneralScraper/
-│   └── 2024/01/15/
-│       ├── 2024-01-15T10-35-00-456Z-def67890.json
-│       └── 2024-01-15T10-35-00-456Z-def67890-metadata.json
 └── AIDiscoveryScraper/
     └── 2024/01/15/
         └── ...
