@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import applicationRoutes from './routes/application.routes.js';
 import userRoutes from './routes/user.routes.js';
 import recommenderRoutes from './routes/recommender.routes.js';
+import recommendationRoutes from './routes/recommendation.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import scholarshipSearchRoutes from './routes/scholarship.search.routes.js';
 import authenticateUser from './middleware/auth.middleware.js';
@@ -66,6 +67,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/applications', authenticateUser, applicationRoutes);
 app.use('/api/users', authenticateUser, userRoutes);
 app.use('/api/recommenders', authenticateUser, recommenderRoutes);
+app.use('/api/recommendations', authenticateUser, recommendationRoutes);
 app.use('/api/scholarships', authenticateUser, scholarshipSearchRoutes);
 
 // Health check route

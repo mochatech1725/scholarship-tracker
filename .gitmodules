@@ -1,6 +1,7 @@
 [submodule "src/shared-types"]
 	path = src/shared-types
 	url = git@github.com:mochatech1725/scholarship-types.git
+	branch = main
 [submodule "server/src/shared-types"]
 	path = server/src/shared-types
 	url = git@github.com:mochatech1725/scholarship-types.git

@@ -96,13 +96,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { useApplicationStore } from 'src/stores/application.store'
-import type { Recommendation, Application, Recommender } from 'src/shared-types'
+import type { Recommendation, Recommender, Application } from 'src/shared-types'
 import { useGetStatusColor } from 'src/composables/useGetStatusColor'
 import RecommendationForm from 'src/components/RecommendationForm.vue'
 import { formatDate } from 'src/utils/helper'
+import { apiService } from 'src/services/api.service'
 
 const props = defineProps<{
   application: Application | null
@@ -114,7 +114,6 @@ const emit = defineEmits<{
 }>()
 
 const $q = useQuasar()
-const applicationStore = useApplicationStore()
 const recommendations = ref<Recommendation[]>([])
 const showForm = ref(false)
 const loading = ref(false)
@@ -137,41 +136,73 @@ const recommendationColumns = [
   { name: 'actions', label: 'Actions', field: 'actions', align: 'right' as const }
 ]
 
-const loadRecommendations = () => {
+const loadRecommendations = async () => {
+  if (props.application?.application_id) {
+    try {
+      const fetched = await apiService.getRecommendationsByApplicationId(props.application.application_id)
+      recommendations.value = Array.isArray(fetched) ? fetched : []
+      emit('recommendations-updated', recommendations.value)
+      return
+    } catch (error) {
+      console.error('Failed to load recommendations:', error)
+    }
+  }
+
   recommendations.value = props.application?.recommendations || []
 }
 
-const createApplicationUpdateObject = (recommendations: Recommendation[]): Application => {
-  if (!props.application) {
-    throw new Error('Application is required')
+const sanitizeDate = (value: Recommendation['due_date']): string | null | undefined => {
+  if (value instanceof Date) {
+    return value.toISOString().split('T')[0]
   }
-  
-  return {
-    ...(props.application.application_id ? { application_id: props.application.application_id } : {}),
-            user_id: props.application.user_id,
-    scholarship_name: props.application.scholarship_name,
-    target_type: props.application.target_type,
-    organization: props.application.organization,
-    org_website: props.application.org_website,
-    platform: props.application.platform,
-    application_link: props.application.application_link,
-    theme: props.application.theme,
-    min_award: props.application.min_award,
-    max_award: props.application.max_award,
-    requirements: props.application.requirements,
-    renewable: props.application.renewable,
-    ...(props.application.renewable_terms && { renewable_terms: props.application.renewable_terms }),
-    document_info_link: props.application.document_info_link,
-    current_action: props.application.current_action,
-    status: props.application.status,
-    ...(props.application.submission_date && { submission_date: props.application.submission_date }),
-    ...(props.application.open_date && { open_date: props.application.open_date }),
-    due_date: props.application.due_date,
-    ...(props.application.created_at && { created_at: props.application.created_at }),
-    ...(props.application.updated_at && { updated_at: props.application.updated_at }),
-    ...(props.application.essays && { essays: props.application.essays }),
-    recommendations
+
+  if (typeof value === 'string') {
+    return value.length > 0 ? value : null
   }
+
+  return null
+}
+
+const sanitizeTimestamp = (value: Recommendation['submitted_at']): string | null | undefined => {
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  if (typeof value === 'string') {
+    return value.length > 0 ? value : null
+  }
+
+  return null
+}
+
+type RecommendationPayload = {
+  application_id: number
+  recommender_id: number
+  status: Recommendation['status']
+  due_date?: string | Date | null
+  submitted_at?: string | Date | null
+}
+
+const toApiPayload = (recommendation: Recommendation): RecommendationPayload => {
+  const applicationId = props.application?.application_id || recommendation.application_id
+  const dueDate = sanitizeDate(recommendation.due_date)
+  const submittedAt = sanitizeTimestamp(recommendation.submitted_at)
+
+  const payload: RecommendationPayload = {
+    application_id: applicationId,
+    recommender_id: recommendation.recommender_id,
+    status: recommendation.status
+  }
+
+  if (dueDate != null) {
+    payload.due_date = dueDate
+  }
+
+  if (submittedAt != null) {
+    payload.submitted_at = submittedAt
+  }
+
+  return payload
 }
 
 const editRecommendation = (recommendation: Recommendation) => {
@@ -187,35 +218,36 @@ const closeForm = () => {
 const handleSubmit = async (form: Recommendation) => {
   try {
     loading.value = true
-    if (editingRecommendation.value && editingRecommendation.value.recommendation_id && props.application && props.application.application_id) {
-      const appId = props.application.application_id;
-      // Update the recommendation in the application's recommendations array
-      const updatedRecommendations = (props.application.recommendations || []).map(rec =>
-        rec.recommendation_id === editingRecommendation.value!.recommendation_id ? form : rec
+    if (editingRecommendation.value && editingRecommendation.value.recommendation_id) {
+      const updated = await apiService.updateRecommendation(
+        editingRecommendation.value.recommendation_id,
+        toApiPayload(form)
       )
-      const updateObj = createApplicationUpdateObject(updatedRecommendations);
-      await applicationStore.updateApplication(appId, updateObj)
+
+      recommendations.value = recommendations.value.map(rec =>
+        rec.recommendation_id === updated.recommendation_id ? updated : rec
+      )
+
       $q.notify({
         type: 'positive',
         message: 'Recommendation updated successfully'
       })
-    } else if (props.application && props.application.application_id) {
-      const appId = props.application.application_id;
-      // Add new recommendation - let database generate the ID
-      const updatedRecommendations = [
-        ...(props.application.recommendations || []),
-        { ...form } // No ID needed - database will generate it
-      ]
-      const updateObj = createApplicationUpdateObject(updatedRecommendations);
-      await applicationStore.updateApplication(appId, updateObj)
+    } else if (props.application?.application_id) {
+      const created = await apiService.createRecommendation(toApiPayload({
+        ...form,
+        application_id: props.application.application_id
+      }))
+
+      recommendations.value = [...recommendations.value, created]
+
       $q.notify({
         type: 'positive',
         message: 'Recommendation created successfully'
       })
     }
-    closeForm()
-    loadRecommendations()
+
     emit('recommendations-updated', recommendations.value)
+    closeForm()
   } catch (err) {
     console.error('Failed to save recommendation:', err)
     $q.notify({
@@ -228,14 +260,16 @@ const handleSubmit = async (form: Recommendation) => {
 }
 
 const confirmDeleteRecommendation = (recommendation: Recommendation) => {
-  if (!recommendation.recommendation_id || !props.application || !props.application.application_id) {
+  const recommendationId = recommendation.recommendation_id
+  const applicationId = props.application?.application_id
+
+  if (!recommendationId || !applicationId) {
     $q.notify({
       color: 'negative',
       message: 'Cannot delete recommendation: No recommendation ID or application found'
     })
     return
   }
-  const appId = props.application.application_id;
   $q.dialog({
     title: 'Confirm',
     message: 'Are you sure you want to delete this recommendation?',
@@ -244,17 +278,14 @@ const confirmDeleteRecommendation = (recommendation: Recommendation) => {
   }).onOk(() => {
     void (async () => {
       try {
-        // Remove the recommendation from the application's recommendations array
-        const updatedRecommendations = (props.application!.recommendations || []).filter(
-          rec => rec.recommendation_id !== recommendation.recommendation_id
+        await apiService.deleteRecommendation(recommendationId)
+        recommendations.value = recommendations.value.filter(
+          rec => rec.recommendation_id !== recommendationId
         )
-        const updateObj = createApplicationUpdateObject(updatedRecommendations);
-        await applicationStore.updateApplication(appId, updateObj)
         $q.notify({
           color: 'positive',
           message: 'Recommendation deleted successfully'
         })
-        loadRecommendations()
         emit('recommendations-updated', recommendations.value)
       } catch (err) {
         console.error('Failed to delete recommendation:', err)
@@ -268,8 +299,15 @@ const confirmDeleteRecommendation = (recommendation: Recommendation) => {
 }
 
 onMounted(() => {
-  loadRecommendations()
+  void loadRecommendations()
 })
+
+watch(
+  () => props.application?.application_id,
+  () => {
+    void loadRecommendations()
+  }
+)
 </script>
 
 <style scoped>

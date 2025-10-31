@@ -1,6 +1,6 @@
 import { useAuthStore } from 'src/stores/auth.store'
 import type { RegisterData } from 'src/types/index.ts'
-import type { Application, Recommender, SearchCriteria, UserSearchPreferences, User } from 'src/shared-types'
+import type { Application, Recommender, Recommendation, SearchCriteria, UserSearchPreferences, User } from 'src/shared-types'
 import { api } from 'src/boot/axios'
 import type { AxiosRequestConfig } from 'axios'
 
@@ -146,6 +146,31 @@ class ApiService {
 
   async deleteRecommender(recommender_id: number) {
     return this.makeRequest(`/api/recommenders/delete/${recommender_id}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Recommendation endpoints
+  async getRecommendationsByApplicationId(application_id: number) {
+    return this.makeRequest(`/api/recommendations/application/${application_id}`)
+  }
+
+  async createRecommendation(recommendation: Omit<Recommendation, 'recommendation_id' | 'created_at' | 'updated_at'>) {
+    return this.makeRequest('/api/recommendations/create', {
+      method: 'POST',
+      data: recommendation
+    })
+  }
+
+  async updateRecommendation(recommendation_id: number, recommendation: Partial<Recommendation>) {
+    return this.makeRequest(`/api/recommendations/update/${recommendation_id}`, {
+      method: 'POST',
+      data: recommendation
+    })
+  }
+
+  async deleteRecommendation(recommendation_id: number) {
+    return this.makeRequest(`/api/recommendations/delete/${recommendation_id}`, {
       method: 'DELETE'
     })
   }
