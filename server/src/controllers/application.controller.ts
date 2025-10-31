@@ -106,12 +106,27 @@ export const create = async (req: Request, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   try {
     const knex = getKnex();
+    const applicationId = Number(req.params.application_id);
+
+    if (Number.isNaN(applicationId)) {
+      return res.status(400).json({ message: 'Invalid application ID' });
+    }
+
+    const {
+      application_id: _ignoreApplicationId,
+      user_id: _ignoreUserId,
+      created_at: _ignoreCreatedAt,
+      updated_at: _ignoreUpdatedAt,
+      ...updates
+    } = req.body as Partial<Application>;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'No updatable fields provided' });
+    }
+
     const updatedCount = await knex<Application>('applications')
-      .where({ application_id: parseInt(req.params.application_id) })
-      .update({
-        ...req.body,
-        updated_at: new Date()
-      });
+      .where({ application_id: applicationId })
+      .update(updates);
 
     if (updatedCount === 0) {
       return res.status(404).json({ message: 'Application not found' });
@@ -119,7 +134,7 @@ export const update = async (req: Request, res: Response) => {
 
     const updatedApplication = await knex<Application>('applications')
       .select('*')
-      .where({ application_id: parseInt(req.params.application_id) })
+      .where({ application_id: applicationId })
       .first();
 
     if (!updatedApplication) {

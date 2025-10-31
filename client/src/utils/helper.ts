@@ -1,15 +1,25 @@
 /**
  * Formats a date string or Date object to mm/dd/yyyy format
  * @param date - Date string or Date object
- * @returns Formatted date string in mm/dd/yyyy format
+ * @returns Formatted date string in mm/dd/yyyy format, or empty string if invalid
  */
-export function formatDate(date: string | Date): string {
-  const dateObj = typeof date === 'string' ? new Date(date) : date
-  return dateObj.toLocaleDateString('en-US', { 
-    month: '2-digit', 
-    day: '2-digit', 
-    year: 'numeric' 
-  })
+export function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return ''
+
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+
+    // Check if the date is valid
+    if (isNaN(dateObj.getTime())) return ''
+
+    return dateObj.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    })
+  } catch {
+    return ''
+  }
 }
 
 /**

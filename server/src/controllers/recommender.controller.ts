@@ -71,12 +71,27 @@ export const create = async (req: Request, res: Response) => {
 export const update = async (req: Request, res: Response) => {
   try {
     const knex = getKnex();
+    const recommenderId = Number(req.params.recommender_id);
+
+    if (Number.isNaN(recommenderId)) {
+      return res.status(400).json({ message: 'Invalid recommender ID' });
+    }
+
+    const {
+      user_id: _ignoreUserId,
+      recommender_id: _ignoreRecommenderId,
+      created_at: _ignoreCreatedAt,
+      updated_at: _ignoreUpdatedAt,
+      ...updates
+    } = req.body as Partial<Recommender>;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'No updatable fields provided' });
+    }
+
     const updatedCount = await knex<Recommender>('recommenders')
-      .where({ recommender_id: parseInt(req.params.id) })
-      .update({
-        ...req.body,
-        updated_at: new Date()
-      });
+      .where({ recommender_id: recommenderId })
+      .update(updates);
 
     if (updatedCount === 0) {
       return res.status(404).json({ message: 'Recommender not found' });
@@ -84,7 +99,7 @@ export const update = async (req: Request, res: Response) => {
 
     const updatedRecommender = await knex<Recommender>('recommenders')
       .select('*')
-      .where({ recommender_id: parseInt(req.params.id) })
+      .where({ recommender_id: recommenderId })
       .first();
 
     res.json(updatedRecommender);
@@ -97,8 +112,14 @@ export const update = async (req: Request, res: Response) => {
 export const deleteRecommender = async (req: Request, res: Response) => {
   try {
     const knex = getKnex();
+    const recommenderId = Number(req.params.recommender_id);
+
+    if (Number.isNaN(recommenderId)) {
+      return res.status(400).json({ message: 'Invalid recommender ID' });
+    }
+
     const deletedCount = await knex<Recommender>('recommenders')
-      .where({ recommender_id: parseInt(req.params.id) })
+      .where({ recommender_id: recommenderId })
       .del();
 
     if (deletedCount === 0) {

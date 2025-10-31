@@ -132,8 +132,8 @@ const recommendationColumns = [
   { name: 'recommender', label: 'Recommender', 
   field: (row: Recommendation) => getRecommenderDisplayName(row), align: 'left' as const },
   { name: 'status', label: 'Status', field: 'status', align: 'left' as const },
-  { name: 'dueDate', label: 'Due Date', field: 'dueDate', align: 'left' as const, format: (val: string) => formatDate(val) },
-  { name: 'submissionDate', label: 'Submitted', field: 'submissionDate', align: 'left' as const, format: (val: string | null) => val ? formatDate(val) : '-' },
+  { name: 'due_date', label: 'Due Date', field: 'due_date', align: 'left' as const, format: (val: string | Date | null | undefined) => val ? formatDate(val) : '-' },
+  { name: 'submitted_at', label: 'Submitted', field: 'submitted_at', align: 'left' as const, format: (val: Date | string | null | undefined) => val ? formatDate(val) : '-' },
   { name: 'actions', label: 'Actions', field: 'actions', align: 'right' as const }
 ]
 

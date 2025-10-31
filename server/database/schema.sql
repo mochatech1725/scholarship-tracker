@@ -99,6 +99,7 @@ CREATE TABLE IF NOT EXISTS recommendations (
     application_id INT NOT NULL,
     recommender_id INT NOT NULL,
     content TEXT,
+    due_date DATE NULL,
     submitted_at TIMESTAMP NULL,
     status ENUM('pending', 'submitted', 'declined') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -108,6 +109,7 @@ CREATE TABLE IF NOT EXISTS recommendations (
     INDEX idx_application_id (application_id),
     INDEX idx_recommender_id (recommender_id),
     INDEX idx_status (status),
+    INDEX idx_due_date (due_date),
     INDEX idx_application_status (application_id, status)
 );
 

@@ -54,9 +54,7 @@ export const createUser = async (req: Request, res: Response) => {
       first_name: req.body.first_name || '',
       last_name: req.body.last_name || '',
       email_address: req.body.email_address || auth0User.email as string || '',
-      phone_number: req.body.phone_number || '',
-      created_at: new Date(),
-      updated_at: new Date()
+      phone_number: req.body.phone_number || ''
     };
 
     const [savedUser] = await knex<User>('users')
@@ -159,8 +157,7 @@ export const saveUserProfile = async (req: Request, res: Response) => {
         academic_gpa: searchPrefs.academic_gpa,
         essay_required: searchPrefs.essay_required,
         recommendations_required: searchPrefs.recommendations_required,
-        academic_level: searchPrefs.academic_level,
-        updated_at: new Date()
+        academic_level: searchPrefs.academic_level
       };
 
       // Update or insert search preferences
@@ -177,11 +174,6 @@ export const saveUserProfile = async (req: Request, res: Response) => {
           .insert(searchPreferencesData);
       }
     }
-
-    // Update user's updated_at timestamp
-    await knex<User>('users')
-      .where({ auth_user_id: req.params.userId })
-      .update({ updated_at: new Date() });
 
     // Get updated user with search preferences
     const updatedUser = await knex<User>('users')

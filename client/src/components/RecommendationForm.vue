@@ -34,26 +34,25 @@
             <q-select
               v-model="selectedRecommenderId"
               :options="recommenderOptions"
+              emit-value
+              map-options
               option-label="label"
               option-value="value"
               flat
               dense
               class="q-mb-md"
               :rules="[val => !!val || 'Recommender is required']"
+              :disable="isEdit"
+              :readonly="isEdit"
               @update:model-value="handleRecommenderChange"
-            />
-          </div>
-
-          <div class="col-12 col-md-6">
-            <div class="form-label">Content</div>
-            <q-input
-              v-model="form.content"
-              type="textarea"
-              flat
-              dense
-              class="q-mb-sm"
-              :rules="[val => !!val || 'Content is required']"
-            />
+            >
+              <template v-if="isEdit" v-slot:append>
+                <q-icon name="lock" size="xs" color="grey-6" />
+              </template>
+            </q-select>
+            <div v-if="isEdit" class="text-caption text-grey-6 q-mt-xs">
+              Recommender cannot be changed after creation
+            </div>
           </div>
 
           <div class="col-12 col-md-6">
@@ -67,6 +66,28 @@
               :rules="[val => !!val || 'Status is required']"
             />
           </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-label">Due Date</div>
+            <q-input
+              v-model="dueDateString"
+              type="date"
+              flat
+              dense
+              class="q-mb-sm"
+            />
+          </div>
+
+          <div class="col-12 col-md-6">
+            <div class="form-label">Submitted Date</div>
+            <q-input
+              v-model="submittedAtString"
+              type="date"
+              flat
+              dense
+              class="q-mb-sm"
+            />
+          </div>
         </div>
       </q-form>
     </q-card-section>
@@ -74,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount, onUnmounted } from 'vue'
+import { ref, onMounted, computed, onBeforeUnmount, onUnmounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import type { Recommendation, Application, Recommender } from 'src/shared-types'
 import ScholarshipBanner from 'components/ScholarshipBanner.vue'
@@ -99,7 +120,7 @@ const selectedRecommenderId = ref<string | null>(null)
 const form = ref<Recommendation>({
   application_id: props.application?.application_id || 0,
   recommender_id: 0,
-  content: '',
+  due_date: null,
   status: 'Pending',
   submitted_at: new Date(),
   created_at: new Date(),
@@ -109,6 +130,42 @@ const form = ref<Recommendation>({
 const originalFormData = ref<Recommendation | null>(null)
 const originalSelectedRecommenderId = ref<string | null>(null)
 const isInitialized = ref(false)
+
+// Computed property for due date string
+const dueDateString = computed({
+  get() {
+    if (!form.value.due_date) return ''
+    try {
+      const dateObj = typeof form.value.due_date === 'string' 
+        ? new Date(form.value.due_date) 
+        : form.value.due_date
+      return dateObj.toISOString().split('T')[0]
+    } catch {
+      return ''
+    }
+  },
+  set(value: string) {
+    form.value.due_date = value || null
+  }
+})
+
+// Computed property for submitted at string
+const submittedAtString = computed({
+  get() {
+    if (!form.value.submitted_at) return ''
+    try {
+      const dateObj = typeof form.value.submitted_at === 'string' 
+        ? new Date(form.value.submitted_at) 
+        : form.value.submitted_at
+      return dateObj.toISOString().split('T')[0]
+    } catch {
+      return ''
+    }
+  },
+  set(value: string) {
+    form.value.submitted_at = value ? new Date(value) : null
+  }
+})
 
 // Track if form is dirty (has been modified)
 const isFormDirty = computed(() => {
@@ -137,7 +194,10 @@ const scholarshipName = computed(() => {
 const statusOptions = ['Pending', 'Approved', 'Rejected'] as const
 
 const handleRecommenderChange = (selectedValue: string) => {
-  const selectedRecommender = props.recommenders.find(r => r.recommender_id === parseInt(selectedValue))
+  // The selected value is the formatted label string (e.g., "John Smith (john@email.com)")
+  const selectedRecommender = props.recommenders.find(r => 
+    `${r.first_name} ${r.last_name} (${r.email_address})` === selectedValue
+  )
   if (selectedRecommender) {
     form.value.recommender_id = selectedRecommender.recommender_id || 0
   }
@@ -181,7 +241,7 @@ const getDefaultFormData = (): Omit<Recommendation, 'recommendation_id'> => {
   return {
     application_id: props.application?.application_id || 0,
     recommender_id: 0,
-    content: '',
+    due_date: null,
     submitted_at: new Date(),
     status: 'Pending' as const,
     created_at: new Date(),
@@ -194,7 +254,7 @@ const initializeFormWithData = () => {
     const recommendationData = {
       application_id: props.application?.application_id || 0,
       recommender_id: props.recommendation.recommender_id,
-      content: props.recommendation.content || '',
+      due_date: props.recommendation.due_date || null,
       submitted_at: props.recommendation.submitted_at || new Date(),
       status: props.recommendation.status,
       created_at: props.recommendation.created_at || new Date(),
@@ -202,15 +262,49 @@ const initializeFormWithData = () => {
     }
     originalFormData.value = { ...recommendationData }
     form.value = recommendationData
+    
+    // Set the selected recommender for the dropdown
+    const recommender = props.recommenders.find(r => r.recommender_id === props.recommendation?.recommender_id)
+    if (recommender) {
+      selectedRecommenderId.value = `${recommender.first_name} ${recommender.last_name} (${recommender.email_address})`
+      originalSelectedRecommenderId.value = selectedRecommenderId.value
+    }
   } else {
     const defaultData = getDefaultFormData()
     originalFormData.value = { ...defaultData }
     form.value = defaultData
+    selectedRecommenderId.value = null
+    originalSelectedRecommenderId.value = null
   }
 }
 
+// Watch for changes to the recommendation prop (when dialog opens with edit data)
+watch(() => props.recommendation, () => {
+  isInitialized.value = false
+  initializeFormWithData()
+  setTimeout(() => {
+    isInitialized.value = true
+  }, 100)
+}, { immediate: false })
+
+// Watch for changes to recommenders prop (in case they load after the form)
+watch(() => props.recommenders, () => {
+  if (props.recommendation && props.recommenders.length > 0) {
+    // Re-set the selected recommender if we're editing and recommenders just loaded
+    const recommender = props.recommenders.find(r => r.recommender_id === props.recommendation?.recommender_id)
+    if (recommender) {
+      selectedRecommenderId.value = `${recommender.first_name} ${recommender.last_name} (${recommender.email_address})`
+    }
+  }
+}, { immediate: false })
+
 onMounted(() => {
   initializeFormWithData()
+  
+  // Mark as initialized after a short delay to avoid false dirty state
+  setTimeout(() => {
+    isInitialized.value = true
+  }, 100)
   
   // Add ESC key listener
   document.addEventListener('keydown', handleKeydown)
