@@ -111,7 +111,7 @@ function validateAndCleanSearchCriteria(
     geographic_restrictions: trimOrNull(criteria.geographic_restrictions),
     ...(criteria.academic_gpa !== null && { academic_gpa: criteria.academic_gpa }),
     essay_required: criteria.essay_required,
-    recommendations_required: criteria.recommendations_required,
+    recommendation_required: criteria.recommendation_required,
     ...(criteria.deadlineRange && {
       deadlineRange: {
         ...(criteria.deadlineRange.startDate && { startDate: criteria.deadlineRange.startDate }),
@@ -166,7 +166,7 @@ const defaultSearchCriteria: SearchCriteria = {
   ethnicity: null,
   geographic_restrictions: null,
   essay_required: null,
-  recommendations_required: null
+  recommendation_required: null
 }
 
 const hasActiveSearchCriteria = computed(() => {

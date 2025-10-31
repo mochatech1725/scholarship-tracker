@@ -31,7 +31,7 @@ CREATE TABLE scholarships (
   apply_url TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   essay_required BOOLEAN DEFAULT FALSE,
-  recommendations_required BOOLEAN DEFAULT FALSE,
+  recommendation_required BOOLEAN DEFAULT FALSE,
   source VARCHAR(100),
   job_id VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

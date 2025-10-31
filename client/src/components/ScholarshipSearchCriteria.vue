@@ -167,7 +167,7 @@
         <!-- Recommendation Required Filter -->
         <div class="filter-section">
           <q-checkbox
-            v-model="localSearchCriteria.recommendations_required"
+            v-model="localSearchCriteria.recommendation_required"
             label="Recommendation Required"
             :true-value="true"
             :false-value="null"
@@ -227,7 +227,7 @@ const activeFiltersCount = computed(() => {
   if (localSearchCriteria.value.ethnicity) count++
   if (localSearchCriteria.value.geographic_restrictions) count++
   if (localSearchCriteria.value.essay_required === true) count++
-  if (localSearchCriteria.value.recommendations_required === true) count++
+  if (localSearchCriteria.value.recommendation_required === true) count++
   
   return count
 })
@@ -256,7 +256,7 @@ const handlePopulateFromProfile = (checked: boolean) => {
       ethnicity: profilePrefs.ethnicity || null,
       geographic_restrictions: null, 
       essay_required: profilePrefs.essay_required || null,
-      recommendations_required: profilePrefs.recommendations_required || null
+      recommendation_required: profilePrefs.recommendation_required || null
     }
   } else if (!checked) {
     // Clear all filters when unchecked
@@ -274,7 +274,7 @@ const clearAllFilters = () => {
     ethnicity: null,
     geographic_restrictions: null,
     essay_required: null,
-    recommendations_required: null
+    recommendation_required: null
   }
   populateFromProfile.value = false
 }

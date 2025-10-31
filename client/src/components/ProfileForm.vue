@@ -144,7 +144,7 @@
               </div>
               <div class="col-12 col-md-6">
                 <q-checkbox
-                  v-model="form.recommendations_required"
+                  v-model="form.recommendation_required"
                   label="Recommendation Required"
                   class="q-mb-sm"
                 />
@@ -184,7 +184,7 @@
             </div>
             <div class="col-12 col-md-6">
               <div class="form-label">Recommendation Required</div>
-              <div class="q-pa-sm">{{ search_preferences?.recommendations_required ? 'Yes' : 'No' }}</div>
+              <div class="q-pa-sm">{{ search_preferences?.recommendation_required ? 'Yes' : 'No' }}</div>
             </div>
           </div>
         </div>
@@ -220,7 +220,7 @@ const form = ref<UserSearchPreferences>({
   gender: 'Female',
   ethnicity: 'Black/African American',
   essay_required: false,
-  recommendations_required: false
+  recommendation_required: false
 })
 
 const originalFormData = ref<UserSearchPreferences | null>(null)
