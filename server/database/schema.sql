@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS scholarships (
     max_award DECIMAL(10,2),
     deadline VARCHAR(255),
     eligibility TEXT,
+    subject_areas JSON,
     gender VARCHAR(50),
     ethnicity VARCHAR(100),
     academic_level VARCHAR(500),
