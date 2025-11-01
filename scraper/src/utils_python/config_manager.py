@@ -74,6 +74,13 @@ class ConfigManager:
             result = cursor.fetchone()
             if result:
                 scraper_type = result['scraper_type']
+                if self.environment == "local" and scraper_type and scraper_type.lower() != 'python':
+                    logger.info(
+                        "Overriding scraper type '%s' to 'python' for local environment",
+                        scraper_type
+                    )
+                    return 'python'
+
                 logger.info(f"Using scraper type from database for {website}: {scraper_type}")
                 return scraper_type
             

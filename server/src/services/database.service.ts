@@ -1,10 +1,14 @@
 import { Knex } from 'knex';
 import { SearchCriteria } from '../shared-types/scholarship-search.types.js';
 import { Scholarship } from '../shared-types/scholarship.types.js';
+import { subjectAreasOptions, SubjectArea } from '../shared-types/application.constants.js';
 import { getKnex } from '../config/database.config.js';
 
 export class SearchService {
   private db: Knex;
+  private static subjectAreaLookup = new Map<string, SubjectArea>(
+    subjectAreasOptions.map(area => [area.toLowerCase(), area])
+  );
 
   constructor() {
     this.db = getKnex();
@@ -25,8 +29,9 @@ export class SearchService {
     let query = this.db<Scholarship>('scholarships').select('*');
 
     if (validatedCriteria.academic_level) {
-      const academicLevelPattern = this.buildLikePattern(validatedCriteria.academic_level);
-      query = query.where('academic_level', 'like', academicLevelPattern);
+      const normalizedAcademicLevel = validatedCriteria.academic_level.toLowerCase();
+      const academicLevelPattern = this.buildLikePattern(normalizedAcademicLevel);
+      query = query.whereRaw('LOWER(academic_level) LIKE ?', [academicLevelPattern]);
     }
     if (validatedCriteria.ethnicity) {
       query = query.where('ethnicity', validatedCriteria.ethnicity);
@@ -36,17 +41,17 @@ export class SearchService {
     }
     if (validatedCriteria.subject_areas && validatedCriteria.subject_areas.length > 0) {
       const subjectTerms = validatedCriteria.subject_areas
-        .map(subject => subject?.trim())
-        .filter(Boolean);
+        .map(subject => subject?.trim().toLowerCase())
+        .filter((value): value is string => Boolean(value));
 
       if (subjectTerms.length > 0) {
         query = query.where(qb => {
           subjectTerms.forEach((subject, index) => {
             const subjectPattern = this.buildLikePattern(subject);
             if (index === 0) {
-              qb.where('eligibility', 'like', subjectPattern);
+              qb.whereRaw('LOWER(eligibility) LIKE ?', [subjectPattern]);
             } else {
-              qb.orWhere('eligibility', 'like', subjectPattern);
+              qb.orWhereRaw('LOWER(eligibility) LIKE ?', [subjectPattern]);
             }
           });
         });
@@ -62,12 +67,14 @@ export class SearchService {
       query = query.where('min_award', '<=', validatedCriteria.max_award);
     }
     if (validatedCriteria.keywords) {
-      // Simple keyword search in name, description, eligibility
-      query = query.where(qb => {
-        qb.where('name', 'like', `%${validatedCriteria.keywords}%`)
-          .orWhere('description', 'like', `%${validatedCriteria.keywords}%`)
-          .orWhere('eligibility', 'like', `%${validatedCriteria.keywords}%`);
-      });
+      const keyword = validatedCriteria.keywords.trim().toLowerCase();
+      if (keyword) {
+        const keywordPattern = this.buildLikePattern(keyword);
+        query = query.whereRaw(
+          '(LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(eligibility) LIKE ?)',
+          [keywordPattern, keywordPattern, keywordPattern]
+        );
+      }
     }
     if (
       validatedCriteria.deadline_range &&
@@ -80,7 +87,93 @@ export class SearchService {
       ]);
     }
     query = query.where('active', true);
-    return await query.limit(100);
+    const results = await query.limit(100);
+
+    if (!results || results.length === 0) {
+      return results;
+    }
+
+    const criteriaSubjectPairs = (validatedCriteria.subject_areas ?? [])
+      .map(subject => {
+        const trimmed = subject?.trim();
+        if (!trimmed) {
+          return null;
+        }
+        return {
+          original: trimmed,
+          normalized: trimmed.toLowerCase()
+        };
+      })
+      .filter((pair): pair is { original: string; normalized: string } => pair !== null);
+
+    const toSubjectArea = (value: unknown): SubjectArea | null => {
+      if (typeof value !== 'string') {
+        return null;
+      }
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) {
+        return null;
+      }
+      return SearchService.subjectAreaLookup.get(normalized) ?? null;
+    };
+
+    return results.map(result => {
+      let subjectAreas: SubjectArea[] = [];
+      const rawSubjectAreas = (result as unknown as { subject_areas?: unknown }).subject_areas;
+
+      if (Array.isArray(rawSubjectAreas)) {
+        subjectAreas = rawSubjectAreas
+          .map(item => toSubjectArea(item))
+          .filter((item): item is SubjectArea => item !== null);
+      } else if (typeof rawSubjectAreas === 'string') {
+        try {
+          const parsed = JSON.parse(rawSubjectAreas);
+          if (Array.isArray(parsed)) {
+            subjectAreas = parsed
+              .map(item => toSubjectArea(item))
+              .filter((item): item is SubjectArea => item !== null);
+          }
+        } catch (error) {
+          if (rawSubjectAreas.includes(',')) {
+            subjectAreas = rawSubjectAreas
+              .split(',')
+              .map(item => toSubjectArea(item))
+              .filter((item): item is SubjectArea => item !== null);
+          } else {
+            const singleSubject = toSubjectArea(rawSubjectAreas);
+            subjectAreas = singleSubject ? [singleSubject] : [];
+          }
+        }
+      }
+
+      if (criteriaSubjectPairs.length > 0) {
+        const eligibilityText = (result.eligibility ?? '').toLowerCase();
+        const titleText = (result.title ?? '').toLowerCase();
+        const descriptionText = (result.description ?? '').toLowerCase();
+
+        const matchedSubjects = criteriaSubjectPairs
+          .filter(({ normalized }) =>
+            eligibilityText.includes(normalized) ||
+            titleText.includes(normalized) ||
+            descriptionText.includes(normalized)
+          )
+          .map(({ normalized }) => SearchService.subjectAreaLookup.get(normalized))
+          .filter((subject): subject is SubjectArea => subject !== undefined);
+
+        if (matchedSubjects.length > 0) {
+          const merged = new Set<SubjectArea>(subjectAreas);
+          matchedSubjects.forEach(item => {
+            merged.add(item);
+          });
+          subjectAreas = Array.from(merged);
+        }
+      }
+
+      return {
+        ...result,
+        subject_areas: subjectAreas
+      };
+    });
   }
 
   async getScholarshipById(scholarship_id: number): Promise<Scholarship | null> {

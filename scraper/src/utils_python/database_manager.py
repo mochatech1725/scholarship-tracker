@@ -6,10 +6,14 @@ Database Manager - Abstract database operations for different environments
 import os
 import json
 import logging
+import re
 import pymysql
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any
 from datetime import datetime
+from calendar import month_abbr
+
+MONTH_LOOKUP = {abbr.lower(): index for index, abbr in enumerate(month_abbr) if abbr}
 from .scholarship_types import Scholarship
 
 logger = logging.getLogger(__name__)
@@ -41,6 +45,81 @@ class DatabaseManager(ABC):
     def update_job_status(self, status: str, metadata: Any):
         """Update job status"""
         pass
+
+    @staticmethod
+    def _normalize_subject_areas(subject_areas: Any) -> Optional[str]:
+        def normalize_items(items) -> list[str]:
+            normalized_list = []
+            for item in items:
+                if isinstance(item, str):
+                    cleaned = item.strip().lower()
+                else:
+                    cleaned = str(item).strip().lower()
+                if cleaned:
+                    normalized_list.append(cleaned)
+            return normalized_list
+
+        if subject_areas is None:
+            return None
+
+        if isinstance(subject_areas, str):
+            trimmed = subject_areas.strip()
+            if not trimmed:
+                return None
+            try:
+                parsed = json.loads(trimmed)
+                if isinstance(parsed, list):
+                    normalized_list = normalize_items(parsed)
+                    if not normalized_list:
+                        return None
+                    return json.dumps(normalized_list)
+            except json.JSONDecodeError:
+                pass
+            normalized_list = normalize_items(trimmed.split(','))
+            if not normalized_list:
+                return None
+            return json.dumps(normalized_list)
+
+        if isinstance(subject_areas, (list, tuple, set)):
+            normalized_list = normalize_items(subject_areas)
+            if not normalized_list:
+                return None
+            return json.dumps(normalized_list)
+
+        # Fallback for other iterables or unexpected types
+        subject_str = str(subject_areas).strip().lower()
+        if not subject_str:
+            return None
+        return json.dumps([subject_str])
+
+    @staticmethod
+    def _normalize_deadline(deadline: Optional[str]) -> Optional[str]:
+        if not deadline:
+            return None
+
+        trimmed = deadline.strip()
+        if not trimmed:
+            return None
+
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", trimmed):
+            return trimmed
+
+        short_month_match = re.fullmatch(r"(?i)([A-Za-z]{3})\s+(\d{1,2})(st|nd|rd|th)?", trimmed)
+        if short_month_match:
+            month_token = short_month_match.group(1).lower()
+            day_token = short_month_match.group(2)
+
+            month_number = MONTH_LOOKUP.get(month_token)
+
+            if month_number:
+                try:
+                    current_year = datetime.now().year
+                    normalized_date = datetime(current_year, month_number, int(day_token))
+                    return normalized_date.strftime('%Y-%m-%d')
+                except ValueError:
+                    return trimmed
+
+        return trimmed
     
     def get_connection(self):
         """Get database connection"""
@@ -103,12 +182,42 @@ class LocalDatabaseManager(DatabaseManager):
             # Normalize dedupe key fields to avoid NULLs in DB
             scholarship.title = (scholarship.title or "").strip()
             scholarship.organization = (scholarship.organization or "").strip()
+            scholarship.deadline = self._normalize_deadline(scholarship.deadline)
             scholarship.deadline = (scholarship.deadline or "").strip()
             
             # Convert to dict and omit scholarship_id if None to let AUTO_INCREMENT handle it
             data = scholarship.to_dict()
             if 'scholarship_id' in data and data['scholarship_id'] is None:
                 del data['scholarship_id']
+
+            if 'subject_areas' in data:
+                normalized_subjects = self._normalize_subject_areas(data['subject_areas'])
+                if normalized_subjects is None:
+                    data.pop('subject_areas', None)
+                else:
+                    data['subject_areas'] = normalized_subjects
+
+            if 'eligibility' in data:
+                eligibility_value = data['eligibility']
+                if eligibility_value is None:
+                    data.pop('eligibility', None)
+                else:
+                    normalized_eligibility = str(eligibility_value).strip().lower()
+                    if normalized_eligibility:
+                        data['eligibility'] = normalized_eligibility
+                    else:
+                        data.pop('eligibility', None)
+
+            if 'academic_level' in data:
+                academic_level_value = data['academic_level']
+                if academic_level_value is None:
+                    data.pop('academic_level', None)
+                else:
+                    normalized_academic_level = str(academic_level_value).strip().lower()
+                    if normalized_academic_level:
+                        data['academic_level'] = normalized_academic_level
+                    else:
+                        data.pop('academic_level', None)
             
             # Build INSERT ... ON DUPLICATE KEY UPDATE using unique(title, organization, deadline)
             placeholders = ', '.join(['%s'] * len(data))
@@ -323,12 +432,42 @@ class ProductionDatabaseManager(DatabaseManager):
             # Normalize dedupe key fields to avoid NULLs in DB
             scholarship.title = (scholarship.title or "").strip()
             scholarship.organization = (scholarship.organization or "").strip()
+            scholarship.deadline = self._normalize_deadline(scholarship.deadline)
             scholarship.deadline = (scholarship.deadline or "").strip()
             
             # Convert to dict and omit scholarship_id if None to let AUTO_INCREMENT handle it
             data = scholarship.to_dict()
             if 'scholarship_id' in data and data['scholarship_id'] is None:
                 del data['scholarship_id']
+
+            if 'subject_areas' in data:
+                normalized_subjects = self._normalize_subject_areas(data['subject_areas'])
+                if normalized_subjects is None:
+                    data.pop('subject_areas', None)
+                else:
+                    data['subject_areas'] = normalized_subjects
+
+            if 'eligibility' in data:
+                eligibility_value = data['eligibility']
+                if eligibility_value is None:
+                    data.pop('eligibility', None)
+                else:
+                    normalized_eligibility = str(eligibility_value).strip().lower()
+                    if normalized_eligibility:
+                        data['eligibility'] = normalized_eligibility
+                    else:
+                        data.pop('eligibility', None)
+
+            if 'academic_level' in data:
+                academic_level_value = data['academic_level']
+                if academic_level_value is None:
+                    data.pop('academic_level', None)
+                else:
+                    normalized_academic_level = str(academic_level_value).strip().lower()
+                    if normalized_academic_level:
+                        data['academic_level'] = normalized_academic_level
+                    else:
+                        data.pop('academic_level', None)
             
             # Build INSERT ... ON DUPLICATE KEY UPDATE using unique(title, organization, deadline)
             placeholders = ', '.join(['%s'] * len(data))

@@ -26,6 +26,7 @@ class Scholarship:
     organization: Optional[str] = None
     org_website: Optional[str] = None
     target_type: Optional[str] = None
+    subject_areas: Optional[List[str]] = None
     min_award: Optional[float] = None
     max_award: Optional[float] = None
     deadline: Optional[str] = None

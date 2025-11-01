@@ -27,7 +27,7 @@ The Scholarship Tracker is a comprehensive web application designed to help stud
 - Application timeline and history
 
 ### Essay Management
-- Store and organize scholarship essays
+- Store and organize scholarship essays (Future)
 - Track essay requirements per scholarship
 
 ### Recommendation System

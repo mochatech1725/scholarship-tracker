@@ -4,12 +4,13 @@ CollegeScholarship Scraper - Python Version
 Scrapes scholarships from CollegeScholarships.org using BeautifulSoup
 """
 
-import os
 import logging
+import re
 import requests
 import time
 from typing import List, Dict, Any, Optional
 from bs4 import BeautifulSoup
+from bs4.element import Tag, NavigableString
 from urllib.parse import urljoin, urlparse
 from datetime import datetime
 from .base_scraper import BaseScraper
@@ -229,7 +230,6 @@ class CollegeScholarshipScraper(BaseScraper):
                 return None
             
             # Skip if title is just a number or amount (common extraction error)
-            import re
             if re.match(r'^[\d,]+$', title.strip()) or re.match(r'^\$[\d,]+$', title.strip()):
                 logger.warning(f"Skipping scholarship with numeric title: {title}")
                 return None
@@ -273,13 +273,14 @@ class CollegeScholarshipScraper(BaseScraper):
             clean_description = self._clean_text(description_text)
             clean_eligibility = self._clean_text(eligibility)
             clean_geographic_restrictions = self._clean_text(geographic_restrictions)
+            detail_url = urljoin(self.base_url, link) if link else ""
             
             # Create scholarship object (let DB auto-increment scholarship_id)
             scholarship = Scholarship(
                 title=clean_title[:200],
                 description=clean_description[:500] if clean_description else None,
-                organization="",  # Will be filled by detail fetching if enabled
-                url=link if link else "",
+                organization="",
+                url=detail_url,
                 source="CollegeScholarships",
                 country="US",
                 active=True,
@@ -292,12 +293,216 @@ class CollegeScholarshipScraper(BaseScraper):
                 academic_level=academic_level[:50] if academic_level else None,
                 geographic_restrictions=clean_geographic_restrictions
             )
+
+            if detail_url:
+                detail_data = self._fetch_detail_data(detail_url)
+            else:
+                detail_data = {}
+
+            if detail_data:
+                if detail_data.get('deadline'):
+                    scholarship.deadline = self._clean_text(detail_data['deadline'])
+
+                if detail_data.get('min_award') is not None:
+                    scholarship.min_award = detail_data['min_award']
+
+                if detail_data.get('max_award') is not None:
+                    scholarship.max_award = detail_data['max_award']
+
+                if detail_data.get('renewable') is not None:
+                    scholarship.renewable = detail_data['renewable']
+
+                if detail_data.get('ethnicity'):
+                    scholarship.ethnicity = self._clean_text(detail_data['ethnicity'])[:100]
+
+                if detail_data.get('organization'):
+                    scholarship.organization = self._clean_text(detail_data['organization'])[:255]
+
+                if detail_data.get('apply_url'):
+                    scholarship.apply_url = detail_data['apply_url']
+
+                if detail_data.get('academic_level'):
+                    academic_detail = self._clean_text(detail_data['academic_level'])
+                    if academic_detail:
+                        scholarship.academic_level = academic_detail[:500]
+
+                if detail_data.get('eligibility_notes'):
+                    notes = ' | '.join(detail_data['eligibility_notes'])
+                    if notes:
+                        combined = f"{scholarship.eligibility + ' | ' if scholarship.eligibility else ''}{notes}"
+                        scholarship.eligibility = combined[:500]
             
             return scholarship
             
         except Exception as e:
             logger.error(f"Error parsing row element: {str(e)}")
             return None
+
+    def _fetch_detail_data(self, detail_url: str) -> Dict[str, Any]:
+        if not detail_url:
+            return {}
+
+        try:
+            time.sleep(1)
+            response = self.session.get(detail_url, timeout=30)
+            response.raise_for_status()
+
+            sanitized = self._sanitize_filename(detail_url)
+            self._store_raw_data(f"collegescholarship_detail_{sanitized}.html", response.text, 'text/html')
+
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            detail_data: Dict[str, Any] = {}
+
+            detail_data['apply_url'] = self._extract_apply_link(soup, detail_url)
+            detail_data['deadline'] = self._extract_detail_value(soup, ['Deadline'])
+
+            min_award_text = self._extract_detail_value(soup, ['Min. award', 'Min award'])
+            max_award_text = self._extract_detail_value(soup, ['Max. award', 'Max award'])
+
+            detail_data['min_award'] = self._parse_currency_value(min_award_text)
+            detail_data['max_award'] = self._parse_currency_value(max_award_text)
+
+            renewable_text = self._extract_detail_value(soup, ['Renewable'])
+            detail_data['renewable'] = self._parse_boolean_value(renewable_text)
+
+            detail_data['ethnicity'] = self._extract_detail_value(soup, ['Race'])
+            detail_data['academic_level'] = self._extract_detail_value(soup, ['Enrollment level'])
+
+            min_gpa = self._extract_detail_value(soup, ['Min. GPA', 'Minimum GPA'])
+            max_gpa = self._extract_detail_value(soup, ['Max. GPA', 'Maximum GPA'])
+            max_age = self._extract_detail_value(soup, ['Max. Age', 'Maximum Age'])
+            award_type = self._extract_detail_value(soup, ['Award type'])
+
+            eligibility_notes: List[str] = []
+            for label, value in [('Min GPA', min_gpa), ('Max GPA', max_gpa), ('Max Age', max_age), ('Award Type', award_type)]:
+                if value:
+                    eligibility_notes.append(f"{label}: {value}")
+
+            detail_data['eligibility_notes'] = eligibility_notes
+            detail_data['organization'] = self._extract_sponsor_organization(soup)
+
+            return detail_data
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch detail data for {detail_url}: {e}")
+            return {}
+
+    def _extract_detail_value(self, soup: BeautifulSoup, labels: List[str]) -> Optional[str]:
+        for label in labels:
+            label_regex = re.compile(rf'^\s*{re.escape(label)}', re.IGNORECASE)
+            matches = soup.find_all(string=label_regex)
+            for match in matches:
+                value = self._extract_value_from_match(match)
+                if value:
+                    return value
+        return None
+
+    def _extract_value_from_match(self, match: Any) -> Optional[str]:
+        if isinstance(match, NavigableString):
+            text = str(match).strip()
+            if ':' in text:
+                parts = text.split(':', 1)
+                value = parts[1].strip()
+                if value:
+                    return value
+
+            parent = match.parent
+        else:
+            parent = match
+
+        if not isinstance(parent, Tag):
+            return None
+
+        parent_text = parent.get_text(' ', strip=True)
+        if ':' in parent_text:
+            parts = parent_text.split(':', 1)
+            value = parts[1].strip()
+            if value:
+                return value
+
+        sibling = parent.next_sibling
+        while sibling and isinstance(sibling, NavigableString) and not sibling.strip():
+            sibling = sibling.next_sibling
+
+        if isinstance(sibling, NavigableString):
+            value = sibling.strip()
+            return value or None
+
+        if isinstance(sibling, Tag):
+            value = sibling.get_text(' ', strip=True)
+            return value or None
+
+        return None
+
+    def _extract_apply_link(self, soup: BeautifulSoup, detail_url: str) -> Optional[str]:
+        apply_link = soup.find('a', string=re.compile(r'apply online', re.IGNORECASE))
+        if not apply_link:
+            apply_link = soup.find('a', attrs={'title': re.compile(r'apply', re.IGNORECASE)})
+
+        if apply_link and apply_link.get('href'):
+            return urljoin(detail_url, apply_link.get('href'))
+
+        return None
+
+    def _extract_sponsor_organization(self, soup: BeautifulSoup) -> Optional[str]:
+        heading = soup.find(lambda tag: tag.name in ['h2', 'h3', 'h4'] and tag.get_text(strip=True).lower() == 'sponsor information')
+        if not heading:
+            return None
+
+        paragraph = heading.find_next('p')
+        while paragraph:
+            text = paragraph.get_text('\n', strip=True)
+            if text:
+                for line in text.split('\n'):
+                    cleaned = line.strip()
+                    lower_line = cleaned.lower()
+                    if not cleaned:
+                        continue
+                    if lower_line.startswith(('phone', 'fax', 'http', 'www')):
+                        continue
+                    if '@' in lower_line:
+                        continue
+                    return cleaned
+            next_paragraph = paragraph.find_next('p')
+            if next_paragraph == paragraph:
+                break
+            paragraph = next_paragraph
+
+        return None
+
+    def _parse_currency_value(self, value: Optional[str]) -> Optional[float]:
+        if not value:
+            return None
+
+        cleaned = re.sub(r'[^0-9.]', '', value)
+        if not cleaned:
+            return None
+
+        try:
+            return float(cleaned)
+        except ValueError:
+            return None
+
+    def _parse_boolean_value(self, value: Optional[str]) -> Optional[bool]:
+        if not value:
+            return None
+
+        lowered = value.strip().lower()
+        if lowered in ('yes', 'y', 'true'): 
+            return True
+        if lowered in ('no', 'n', 'false'):
+            return False
+        return None
+
+    def _sanitize_filename(self, url: str) -> str:
+        parsed = urlparse(url)
+        path = parsed.path.strip('/') or 'scholarship'
+        path = path.replace('/', '_')
+        if parsed.query:
+            path = f"{path}_{parsed.query.replace('=', '-').replace('&', '_')}"
+        sanitized = re.sub(r'[^A-Za-z0-9_.-]', '_', path)
+        return sanitized[:200]
     
     def _clean_text(self, text: str) -> str:
         """Clean text by removing extra whitespace and quotes"""
