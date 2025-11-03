@@ -65,7 +65,7 @@ const scholarshipColumns = [
   {
     name: 'eligibility',
     label: 'Eligibility',
-    field: (row: Scholarship) => row.eligibility,
+    field: (row: Scholarship) => Array.isArray(row.eligibility) ? row.eligibility.join(', ') : (row.eligibility ?? ''),
     align: 'left' as const
   },
   {
@@ -77,13 +77,13 @@ const scholarshipColumns = [
   {
     name: 'url',
     label: 'Website',
-    field: (row: Scholarship) => row.url,
+    field: (row: Scholarship) => row.source_url,
     align: 'left' as const
   },
   {
     name: 'geographicRestrictions',
     label: 'Geographic Restrictions',
-    field: (row: Scholarship) => row.geographic_restrictions,
+    field: (row: Scholarship) => Array.isArray(row.geographic_restrictions) ? row.geographic_restrictions.join(', ') : (row.geographic_restrictions ?? ''),
     align: 'left' as const
   }
 ]

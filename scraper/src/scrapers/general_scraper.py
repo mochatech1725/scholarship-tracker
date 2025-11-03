@@ -216,7 +216,7 @@ class GeneralScraper(BaseScraper):
                 title=title[:200],  # Limit title length
                 description=description[:500] if description else None,  # Limit description
                 organization=organization,
-                url=url,
+                source_url=url,
                 source="Efficient Scraper",
                 country="US",
                 active=True,

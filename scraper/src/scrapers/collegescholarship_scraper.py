@@ -14,7 +14,7 @@ from bs4.element import Tag, NavigableString
 from urllib.parse import urljoin, urlparse
 from datetime import datetime
 from .base_scraper import BaseScraper
-from ..utils_python import Scholarship, ScrapingResult, ScrapingMetadata
+from ..utils_python import Scholarship, ScrapingResult, ScrapingMetadata, normalize_deadline_value
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +194,7 @@ class CollegeScholarshipScraper(BaseScraper):
             if not summary or not description:
                 return None
             
-            # Extract amount from summary (like TypeScript version)
+            # Extract amount from summary
             amount_element = summary.find('div', class_='lead')
             if amount_element:
                 amount_text = amount_element.find('strong')
@@ -204,7 +204,7 @@ class CollegeScholarshipScraper(BaseScraper):
             
             min_award, max_award = self._parse_amount(amount)
             
-            # Extract deadline from summary (like TypeScript version)
+            # Extract deadline from summary
             deadline_element = summary.find_all('p')[-1] if summary.find_all('p') else None
             if deadline_element:
                 deadline_strong = deadline_element.find('strong')
@@ -212,7 +212,7 @@ class CollegeScholarshipScraper(BaseScraper):
             else:
                 raw_deadline = 'No deadline specified'
             
-            # Extract title and link from description (like TypeScript version)
+            # Extract title and link from description
             title_element = description.find('h4')
             if title_element:
                 link_element = title_element.find('a')
@@ -225,7 +225,7 @@ class CollegeScholarshipScraper(BaseScraper):
             else:
                 return None
             
-            # Skip if title contains 'Find Scholarships' (like TypeScript version)
+            # Skip if title contains 'Find Scholarships'
             if 'Find Scholarships' in title:
                 return None
             
@@ -234,13 +234,13 @@ class CollegeScholarshipScraper(BaseScraper):
                 logger.warning(f"Skipping scholarship with numeric title: {title}")
                 return None
             
-            # Extract description from description section (like TypeScript version)
+            # Extract description from description section
             desc_paragraphs = description.find_all('p', class_=lambda x: x != 'visible-xs')
             description_text = ''
             if desc_paragraphs:
                 description_text = desc_paragraphs[0].get_text(strip=True)
             
-            # Extract eligibility items from ul.fa-ul li (like TypeScript version)
+            # Extract eligibility items from ul.fa-ul li
             eligibility_items = []
             academic_level_items = []
             geographic_restrictions_items = []
@@ -262,25 +262,54 @@ class CollegeScholarshipScraper(BaseScraper):
                                 else:
                                     eligibility_items.append(text)
             
-            # Join items like TypeScript version
-            eligibility = ' | '.join(eligibility_items)
-            academic_level = ' | '.join(academic_level_items)
-            geographic_restrictions = ' | '.join(geographic_restrictions_items)
+            eligibility_entries: List[str] = []
+            for item in eligibility_items:
+                normalized_item = self._normalize_eligibility_text(self._clean_text(item))
+                if normalized_item:
+                    normalized_lower = normalized_item.lower()
+                    # Exclude "all majors eligible"
+                    if normalized_lower != 'all majors eligible':
+                        eligibility_entries.append(normalized_lower)
+
+            academic_level_entries: List[str] = []
+            for item in academic_level_items:
+                normalized_item = self._normalize_eligibility_text(self._clean_text(item))
+                if normalized_item:
+                    cleaned_item = normalized_item.lower()
+                    if cleaned_item not in ('degree', 'study'):
+                        academic_level_entries.append(cleaned_item)
+
+            geo_entries: List[str] = []
+            for item in geographic_restrictions_items:
+                normalized_item = self._clean_text(item)
+                if normalized_item:
+                    geo_entries.append(normalized_item.lower())
             
             # Clean text like TypeScript version
             clean_title = self._clean_text(title)
             clean_deadline = self._clean_text(raw_deadline)
+            normalized_deadline = normalize_deadline_value(clean_deadline)
+            if normalized_deadline:
+                clean_deadline = normalized_deadline
             clean_description = self._clean_text(description_text)
-            clean_eligibility = self._clean_text(eligibility)
-            clean_geographic_restrictions = self._clean_text(geographic_restrictions)
             detail_url = urljoin(self.base_url, link) if link else ""
+            
+            # Check description for "financial need" to set target_type
+            target_type = None
+            if clean_description and 'financial need' in clean_description.lower():
+                target_type = 'need'
+            
+            # Extract GPA from description (e.g., "minimum x.y GPA")
+            min_gpa = None
+            if clean_description:
+                min_gpa = self._extract_gpa_from_text(clean_description)
             
             # Create scholarship object (let DB auto-increment scholarship_id)
             scholarship = Scholarship(
                 title=clean_title[:200],
                 description=clean_description[:500] if clean_description else None,
                 organization="",
-                url=detail_url,
+                source_url=detail_url,
                 source="CollegeScholarships",
                 country="US",
                 active=True,
@@ -289,11 +318,14 @@ class CollegeScholarshipScraper(BaseScraper):
                 min_award=min_award,
                 max_award=max_award,
                 deadline=clean_deadline,
-                eligibility=clean_eligibility[:500] if clean_eligibility else None,
-                academic_level=academic_level[:50] if academic_level else None,
-                geographic_restrictions=clean_geographic_restrictions
+                eligibility=eligibility_entries if eligibility_entries else None,
+                academic_level=academic_level_entries if academic_level_entries else None,
+                geographic_restrictions=geo_entries if geo_entries else None,
+                target_type=target_type,
+                min_gpa=min_gpa
             )
 
+            # the detailed url takes you to a page with more details about the scholarship
             if detail_url:
                 detail_data = self._fetch_detail_data(detail_url)
             else:
@@ -301,7 +333,12 @@ class CollegeScholarshipScraper(BaseScraper):
 
             if detail_data:
                 if detail_data.get('deadline'):
-                    scholarship.deadline = self._clean_text(detail_data['deadline'])
+                    detail_deadline = self._clean_text(detail_data['deadline'])
+                    normalized_detail_deadline = normalize_deadline_value(detail_deadline)
+                    if normalized_detail_deadline:
+                        scholarship.deadline = normalized_detail_deadline
+                    elif detail_deadline:
+                        scholarship.deadline = detail_deadline
 
                 if detail_data.get('min_award') is not None:
                     scholarship.min_award = detail_data['min_award']
@@ -313,7 +350,10 @@ class CollegeScholarshipScraper(BaseScraper):
                     scholarship.renewable = detail_data['renewable']
 
                 if detail_data.get('ethnicity'):
-                    scholarship.ethnicity = self._clean_text(detail_data['ethnicity'])[:100]
+                    ethnicity_value = self._clean_text(detail_data['ethnicity'])
+                    if ethnicity_value:
+                        normalized_ethnicity = ethnicity_value.lower()
+                        scholarship.ethnicity = [normalized_ethnicity]
 
                 if detail_data.get('organization'):
                     scholarship.organization = self._clean_text(detail_data['organization'])[:255]
@@ -321,16 +361,71 @@ class CollegeScholarshipScraper(BaseScraper):
                 if detail_data.get('apply_url'):
                     scholarship.apply_url = detail_data['apply_url']
 
-                if detail_data.get('academic_level'):
-                    academic_detail = self._clean_text(detail_data['academic_level'])
-                    if academic_detail:
-                        scholarship.academic_level = academic_detail[:500]
+                # Map Enrollment level to academic_level
+                if detail_data.get('enrollment_level'):
+                    enrollment_level = self._clean_text(detail_data['enrollment_level'])
+                    if enrollment_level:
+                        mapped_level = self._map_enrollment_level(enrollment_level)
+                        if mapped_level:
+                            existing_academic = scholarship.academic_level or []
+                            combined_academic = []
+                            for entry in existing_academic + [mapped_level]:
+                                if entry and entry not in combined_academic:
+                                    combined_academic.append(entry)
+                            scholarship.academic_level = combined_academic if combined_academic else None
+                
+                # Parse Major field for subject_areas
+                if detail_data.get('major'):
+                    major = self._clean_text(detail_data['major'])
+                    if major:
+                        subject_areas = self._parse_major_to_subject_areas(major)
+                        if subject_areas:
+                            scholarship.subject_areas = subject_areas
 
                 if detail_data.get('eligibility_notes'):
-                    notes = ' | '.join(detail_data['eligibility_notes'])
-                    if notes:
-                        combined = f"{scholarship.eligibility + ' | ' if scholarship.eligibility else ''}{notes}"
-                        scholarship.eligibility = combined[:500]
+                    extra_notes: List[str] = []
+                    for note in detail_data['eligibility_notes']:
+                        normalized_note = self._normalize_eligibility_text(self._clean_text(note))
+                        if normalized_note:
+                            normalized_lower = normalized_note.lower()
+                            # Exclude "all majors eligible"
+                            if normalized_lower != 'all majors eligible':
+                                extra_notes.append(normalized_lower)
+
+                    if extra_notes:
+                        existing = scholarship.eligibility or []
+                        combined: List[str] = []
+                        for entry in existing + extra_notes:
+                            if entry and entry not in combined:
+                                combined.append(entry)
+                        scholarship.eligibility = combined if combined else None
+
+                if detail_data.get('min_gpa') is not None:
+                    scholarship.min_gpa = detail_data['min_gpa']
+                
+                # Check final description for "financial need" to set target_type
+                # (in case description was updated from detail page)
+                if scholarship.description and 'financial need' in scholarship.description.lower():
+                    scholarship.target_type = 'need'
+                
+                # Check Purpose field for "financial Need" (with capital N)
+                if detail_data.get('purpose'):
+                    purpose_text = detail_data['purpose']
+                    if 'financial Need' in purpose_text or 'financial need' in purpose_text.lower():
+                        scholarship.target_type = 'need'
+                
+                # Check To Apply field for "financial Need" (with capital N)
+                if detail_data.get('to_apply'):
+                    to_apply_text = detail_data['to_apply']
+                    if 'financial Need' in to_apply_text or 'financial need' in to_apply_text.lower():
+                        scholarship.target_type = 'need'
+                
+                # Extract GPA from final description if not already set
+                # (in case description was updated from detail page)
+                if scholarship.min_gpa is None and scholarship.description:
+                    extracted_gpa = self._extract_gpa_from_text(scholarship.description)
+                    if extracted_gpa is not None:
+                        scholarship.min_gpa = extracted_gpa
             
             return scholarship
             
@@ -366,18 +461,24 @@ class CollegeScholarshipScraper(BaseScraper):
             renewable_text = self._extract_detail_value(soup, ['Renewable'])
             detail_data['renewable'] = self._parse_boolean_value(renewable_text)
 
-            detail_data['ethnicity'] = self._extract_detail_value(soup, ['Race'])
-            detail_data['academic_level'] = self._extract_detail_value(soup, ['Enrollment level'])
+            race_value = self._extract_detail_value(soup, ['Race'])
+            if race_value:
+                cleaned_race = self._clean_text(race_value).lower()
+            else:
+                cleaned_race = None
+
+            detail_data['ethnicity'] = cleaned_race
+            detail_data['enrollment_level'] = self._extract_detail_value(soup, ['Enrollment level'])
+            detail_data['major'] = self._extract_detail_value(soup, ['Major'])
+            detail_data['purpose'] = self._extract_detail_value(soup, ['Purpose'])
+            detail_data['to_apply'] = self._extract_detail_value(soup, ['To Apply', 'To apply'])
 
             min_gpa = self._extract_detail_value(soup, ['Min. GPA', 'Minimum GPA'])
-            max_gpa = self._extract_detail_value(soup, ['Max. GPA', 'Maximum GPA'])
-            max_age = self._extract_detail_value(soup, ['Max. Age', 'Maximum Age'])
-            award_type = self._extract_detail_value(soup, ['Award type'])
+            _award_type = self._extract_detail_value(soup, ['Award type'])  # intentionally ignored
+
+            detail_data['min_gpa'] = self._parse_gpa_value(min_gpa)
 
             eligibility_notes: List[str] = []
-            for label, value in [('Min GPA', min_gpa), ('Max GPA', max_gpa), ('Max Age', max_age), ('Award Type', award_type)]:
-                if value:
-                    eligibility_notes.append(f"{label}: {value}")
 
             detail_data['eligibility_notes'] = eligibility_notes
             detail_data['organization'] = self._extract_sponsor_organization(soup)
@@ -484,6 +585,19 @@ class CollegeScholarshipScraper(BaseScraper):
         except ValueError:
             return None
 
+    def _parse_gpa_value(self, value: Optional[str]) -> Optional[float]:
+        if not value:
+            return None
+
+        cleaned = re.sub(r'[^0-9.]', '', value)
+        if not cleaned:
+            return None
+
+        try:
+            return float(cleaned)
+        except ValueError:
+            return None
+
     def _parse_boolean_value(self, value: Optional[str]) -> Optional[bool]:
         if not value:
             return None
@@ -516,6 +630,107 @@ class CollegeScholarshipScraper(BaseScraper):
         if text.startswith("'") and text.endswith("'"):
             text = text[1:-1]
         return text
+
+    def _normalize_eligibility_text(self, text: str) -> str:
+        if not text:
+            return text
+
+        normalized = re.sub(r"\b([A-Za-z’'`-]+?)-level study\b", r"\1", text, flags=re.IGNORECASE)
+        normalized = re.sub(r"\s{2,}", " ", normalized).strip()
+        return normalized
+    
+    def _map_enrollment_level(self, enrollment_level: str) -> Optional[str]:
+        """Map Enrollment level to standardized academic_level values.
+        
+        Parameters:
+            enrollment_level: Raw enrollment level string from detail page (e.g., "High school senior").
+            
+        Returns:
+            Mapped academic level or None if should be ignored.
+        """
+        if not enrollment_level:
+            return None
+        
+        level_lower = enrollment_level.strip().lower()
+        
+        # Map high school levels
+        if 'high school' in level_lower:
+            return 'high school'
+        
+        # Map college/undergraduate levels
+        if any(term in level_lower for term in ['college', 'undergraduate', 'bachelor', 'associate']):
+            return 'undergraduate'
+        
+        # Map graduate levels
+        if any(term in level_lower for term in ['graduate', 'masters', 'master', 'doctoral', 'phd', 'doctorate']):
+            return 'graduate'
+        
+        # Default: return None for unrecognized levels
+        return None
+    
+    def _parse_major_to_subject_areas(self, major: str) -> Optional[List[str]]:
+        """Parse Major field into subject_areas array.
+        
+        Parameters:
+            major: Major field value from detail page (e.g., "Jewish/Judaic Studies, Religion/Religious Studies").
+            
+        Returns:
+            List of subject area strings, or None if empty.
+        """
+        if not major:
+            return None
+        
+        # Clean and split major text
+        major_cleaned = self._clean_text(major)
+        
+        # Split by common delimiters (comma, slash, semicolon)
+        areas = re.split(r'[,;/]', major_cleaned)
+        
+        # Clean each area and filter empty ones
+        subject_areas = []
+        for area in areas:
+            cleaned = area.strip().lower()
+            if cleaned:
+                subject_areas.append(cleaned)
+        
+        return subject_areas if subject_areas else None
+    
+    def _extract_gpa_from_text(self, text: str) -> Optional[float]:
+        """Extract GPA value from text (e.g., "minimum x.y GPA").
+        
+        Parameters:
+            text: Text to search for GPA patterns.
+            
+        Returns:
+            GPA value as float, or None if not found.
+        """
+        if not text:
+            return None
+        
+        text_lower = text.lower()
+        
+        # Try pattern: "minimum x.y GPA" or "minimum x.y gpa"
+        gpa_patterns = [
+            r'minimum\s+([\d.]+)\s+gpa',
+            r'min\s+([\d.]+)\s+gpa',
+            r'gpa\s+of\s+([\d.]+)',
+            r'gpa\s*[:\-]?\s*([\d.]+)',
+            r'([\d.]+)\s+gpa\s+required',
+            r'([\d.]+)\s+gpa\s+minimum',
+        ]
+        
+        for pattern in gpa_patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                try:
+                    gpa_value = float(match.group(1))
+                    # Validate GPA is in reasonable range (0.0 to 4.0 or 0.0 to 5.0)
+                    if 0.0 <= gpa_value <= 5.0:
+                        return gpa_value
+                except (ValueError, IndexError):
+                    continue
+        
+        return None
     
     def _extract_text(self, element, selectors: List[str]) -> Optional[str]:
         """Extract text using multiple possible selectors"""

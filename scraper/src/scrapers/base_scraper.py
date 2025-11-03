@@ -12,7 +12,7 @@ from typing import List, Optional
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ..utils_python import Scholarship, ScrapingResult, ScrapingMetadata
-from .constants import SCRAPER_MIN_REQUEST_DELAY_SEC
+from .constants import SCRAPER_MIN_REQUEST_DELAY_SEC, MAX_CAREERONESTOP_PAGES
 from ..utils_python.database_manager import DatabaseManagerFactory
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,14 @@ class BaseScraper(ABC):
             env_max_pages = int(os.getenv('SCRAPER_MAX_PAGES')) if os.getenv('SCRAPER_MAX_PAGES') else None
         except Exception:
             env_max_pages = None
-        self.max_pages = max_pages if isinstance(max_pages, int) and max_pages > 0 else (env_max_pages if isinstance(env_max_pages, int) and env_max_pages > 0 else 3)
+        
+        # Set max_pages: use parameter if valid, else env var if valid, else default to 3
+        if isinstance(max_pages, int) and max_pages > 0:
+            self.max_pages = max_pages
+        elif isinstance(env_max_pages, int) and env_max_pages > 0:
+            self.max_pages = env_max_pages
+        else:
+            self.max_pages = MAX_CAREERONESTOP_PAGES
         
         # Create database manager using factory
         self.db_manager = DatabaseManagerFactory.create_database_manager(environment)

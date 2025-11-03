@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import ScholarshipSearchService from '../services/scholarship-search.service.js';
 import { SearchService } from '../services/database.service.js';
 import { Scholarship } from '../shared-types/scholarship.types.js';
-import { subjectAreasOptions, SubjectArea } from '../shared-types/application.constants.js';
+import { subjectAreasOptions, SubjectArea, ethnicityOptions } from '../shared-types/application.constants.js';
 import { MAX_SCHOLARSHIP_SEARCH_RESULTS, NODE_ENV } from '../utils/constants.js';
 
 let searchService: ScholarshipSearchService;
@@ -14,6 +14,10 @@ export async function initScholarshipSearchController() {
 
 const SUBJECT_AREA_LOOKUP = new Map<string, SubjectArea>(
   subjectAreasOptions.map(area => [area.toLowerCase(), area])
+);
+
+const ETHNICITY_LOOKUP = new Map<string, string>(
+  ethnicityOptions.map(option => [option.toLowerCase(), option])
 );
 
 const toSubjectArea = (value: unknown): SubjectArea | null => {
@@ -33,21 +37,53 @@ const toSubjectArea = (value: unknown): SubjectArea | null => {
  * @returns Processed scholarship results with eligibility as string
  */
 const convertScholarshipItems = (scholarships: Scholarship[]): Scholarship[] => {
+  const parseStringArray = (value: unknown): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value
+        .map(item => (typeof item === 'string' ? item.trim() : String(item).trim()))
+        .filter((item): item is string => Boolean(item));
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return parseStringArray(parsed);
+        }
+      } catch (error) {
+        // Not JSON, fall back
+      }
+      return trimmed
+        .split(/[|,]/)
+        .map(item => item.trim())
+        .filter((item): item is string => Boolean(item));
+    }
+    return [];
+  };
+
+  const dedupeStrings = (items: string[]): string[] => {
+    const seen = new Set<string>();
+    const output: string[] = [];
+    items.forEach(item => {
+      const key = item.trim();
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        output.push(key);
+      }
+    });
+    return output;
+  };
+
   return scholarships.map(scholarship => {
-    let eligibility = scholarship.eligibility;
+    const eligibilityArray = dedupeStrings(parseStringArray((scholarship as unknown as { eligibility?: unknown }).eligibility ?? scholarship.eligibility));
+    const formattedEligibility = eligibilityArray.map(item => item.replace(/\b([a-z])/g, (_, letter: string) => letter.toUpperCase()));
+    const ethnicityArray = dedupeStrings(parseStringArray((scholarship as unknown as { ethnicity?: unknown }).ethnicity ?? scholarship.ethnicity)).map(item => ETHNICITY_LOOKUP.get(item.toLowerCase()) ?? item);
+    const academicLevelArray = dedupeStrings(parseStringArray((scholarship as unknown as { academic_level?: unknown }).academic_level ?? scholarship.academic_level));
+    const geographicRestrictionsArray = dedupeStrings(parseStringArray((scholarship as unknown as { geographic_restrictions?: unknown }).geographic_restrictions ?? scholarship.geographic_restrictions));
     let subjectAreas: SubjectArea[] | undefined;
     const rawSubjectAreas = (scholarship as unknown as { subject_areas?: unknown }).subject_areas;
-    if (eligibility && typeof eligibility === 'object') {
-      if (Array.isArray(eligibility)) {
-        // Convert array to comma-separated string
-        eligibility = (eligibility as unknown[]).map(item => String(item)).join(', ');
-      } else {
-        // Convert object values to comma-separated string
-        eligibility = Object.values(eligibility as Record<string, unknown>)
-          .map(value => String(value))
-          .join(', ');
-      }
-    }
 
     if (Array.isArray(rawSubjectAreas)) {
       const converted = rawSubjectAreas
@@ -86,7 +122,10 @@ const convertScholarshipItems = (scholarships: Scholarship[]): Scholarship[] => 
     }
     return {
       ...scholarship,
-      eligibility,
+      eligibility: formattedEligibility,
+      ethnicity: ethnicityArray,
+      academic_level: academicLevelArray,
+      geographic_restrictions: geographicRestrictionsArray,
       subject_areas: subjectAreas
     };
   });

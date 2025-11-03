@@ -29,12 +29,16 @@ export class SearchService {
     let query = this.db<Scholarship>('scholarships').select('*');
 
     if (validatedCriteria.academic_level) {
-      const normalizedAcademicLevel = validatedCriteria.academic_level.toLowerCase();
-      const academicLevelPattern = this.buildLikePattern(normalizedAcademicLevel);
-      query = query.whereRaw('LOWER(academic_level) LIKE ?', [academicLevelPattern]);
+      const normalizedAcademicLevel = validatedCriteria.academic_level.trim().toLowerCase();
+      if (normalizedAcademicLevel) {
+        query = query.whereRaw("JSON_SEARCH(academic_level, 'one', ?, NULL, '$') IS NOT NULL", [normalizedAcademicLevel]);
+      }
     }
     if (validatedCriteria.ethnicity) {
-      query = query.where('ethnicity', validatedCriteria.ethnicity);
+      const normalizedEthnicity = validatedCriteria.ethnicity.trim().toLowerCase();
+      if (normalizedEthnicity) {
+        query = query.whereRaw("JSON_SEARCH(ethnicity, 'one', ?, NULL, '$') IS NOT NULL", [normalizedEthnicity]);
+      }
     }
     if (validatedCriteria.gender) {
       query = query.where('gender', validatedCriteria.gender);
@@ -48,10 +52,11 @@ export class SearchService {
         query = query.where(qb => {
           subjectTerms.forEach((subject, index) => {
             const subjectPattern = this.buildLikePattern(subject);
+            const clause = "JSON_SEARCH(eligibility, 'one', ?, NULL, '$') IS NOT NULL";
             if (index === 0) {
-              qb.whereRaw('LOWER(eligibility) LIKE ?', [subjectPattern]);
+              qb.whereRaw(clause, [subjectPattern]);
             } else {
-              qb.orWhereRaw('LOWER(eligibility) LIKE ?', [subjectPattern]);
+              qb.orWhereRaw(clause, [subjectPattern]);
             }
           });
         });
@@ -66,12 +71,18 @@ export class SearchService {
     if (validatedCriteria.max_award !== undefined && validatedCriteria.max_award !== null) {
       query = query.where('min_award', '<=', validatedCriteria.max_award);
     }
+    if (validatedCriteria.academic_gpa !== undefined && validatedCriteria.academic_gpa !== null) {
+      const gpaValue = validatedCriteria.academic_gpa;
+      query = query.where(qb => {
+        qb.whereNull('min_gpa').orWhere('min_gpa', '<=', gpaValue);
+      });
+    }
     if (validatedCriteria.keywords) {
       const keyword = validatedCriteria.keywords.trim().toLowerCase();
       if (keyword) {
         const keywordPattern = this.buildLikePattern(keyword);
         query = query.whereRaw(
-          '(LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(eligibility) LIKE ?)',
+          "(LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR JSON_SEARCH(eligibility, 'one', ?, NULL, '$') IS NOT NULL)",
           [keywordPattern, keywordPattern, keywordPattern]
         );
       }
@@ -117,6 +128,45 @@ export class SearchService {
       return SearchService.subjectAreaLookup.get(normalized) ?? null;
     };
 
+    const parseStringArray = (value: unknown): string[] => {
+      if (!value) return [];
+      if (Array.isArray(value)) {
+        return value
+          .map(item => (typeof item === 'string' ? item.trim() : String(item).trim()))
+          .filter((item): item is string => Boolean(item));
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) return [];
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            return parseStringArray(parsed);
+          }
+        } catch (error) {
+          // Not JSON, fall back to delimiter split
+        }
+        return trimmed
+          .split(/[|,]/)
+          .map(item => item.trim())
+          .filter((item): item is string => Boolean(item));
+      }
+      return [];
+    };
+
+    const dedupeStrings = (items: string[]): string[] => {
+      const seen = new Set<string>();
+      const result: string[] = [];
+      items.forEach(item => {
+        const key = item.trim();
+        if (key && !seen.has(key)) {
+          seen.add(key);
+          result.push(key);
+        }
+      });
+      return result;
+    };
+
     return results.map(result => {
       let subjectAreas: SubjectArea[] = [];
       const rawSubjectAreas = (result as unknown as { subject_areas?: unknown }).subject_areas;
@@ -146,8 +196,13 @@ export class SearchService {
         }
       }
 
+      const eligibilityArray = dedupeStrings(parseStringArray((result as unknown as { eligibility?: unknown }).eligibility));
+      const ethnicityArray = dedupeStrings(parseStringArray((result as unknown as { ethnicity?: unknown }).ethnicity)).map(item => item.toLowerCase());
+      const academicLevelArray = dedupeStrings(parseStringArray((result as unknown as { academic_level?: unknown }).academic_level));
+      const geographicRestrictionsArray = dedupeStrings(parseStringArray((result as unknown as { geographic_restrictions?: unknown }).geographic_restrictions));
+
       if (criteriaSubjectPairs.length > 0) {
-        const eligibilityText = (result.eligibility ?? '').toLowerCase();
+        const eligibilityText = eligibilityArray.join(' ').toLowerCase();
         const titleText = (result.title ?? '').toLowerCase();
         const descriptionText = (result.description ?? '').toLowerCase();
 
@@ -169,9 +224,23 @@ export class SearchService {
         }
       }
 
+      const rawMinGpa = (result as unknown as { min_gpa?: unknown }).min_gpa;
+      let minGpa: number | undefined;
+      if (rawMinGpa !== undefined && rawMinGpa !== null) {
+        const numeric = Number(rawMinGpa);
+        if (!Number.isNaN(numeric)) {
+          minGpa = numeric;
+        }
+      }
+
       return {
         ...result,
-        subject_areas: subjectAreas
+        subject_areas: subjectAreas,
+        eligibility: eligibilityArray,
+        ethnicity: ethnicityArray,
+        academic_level: academicLevelArray,
+        geographic_restrictions: geographicRestrictionsArray,
+        min_gpa: minGpa
       };
     });
   }

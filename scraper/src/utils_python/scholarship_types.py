@@ -30,19 +30,20 @@ class Scholarship:
     min_award: Optional[float] = None
     max_award: Optional[float] = None
     deadline: Optional[str] = None
-    eligibility: Optional[str] = None
+    eligibility: Optional[List[str]] = None
     gender: Optional[str] = None
-    ethnicity: Optional[str] = None
-    academic_level: Optional[str] = None
+    ethnicity: Optional[List[str]] = None
+    academic_level: Optional[List[str]] = None
     essay_required: Optional[bool] = None
     recommendation_required: Optional[bool] = None
     renewable: Optional[bool] = None
-    geographic_restrictions: Optional[str] = None
+    geographic_restrictions: Optional[List[str]] = None
     apply_url: Optional[str] = None
-    url: Optional[str] = None
+    source_url: Optional[str] = None
     source: Optional[str] = None
     country: Optional[str] = None
     active: Optional[bool] = None
+    min_gpa: Optional[float] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

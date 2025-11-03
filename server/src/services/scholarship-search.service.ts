@@ -187,15 +187,19 @@ export class ScholarshipSearchService {
       });
     }
     // Academic level matching
-    if (criteria.academic_level && scholarship.academic_level) {
-      if (scholarship.academic_level.toLowerCase().includes(criteria.academic_level.toLowerCase())) {
+    if (criteria.academic_level && scholarship.academic_level && scholarship.academic_level.length > 0) {
+      const normalizedAcademicLevel = criteria.academic_level.toLowerCase();
+      const matches = scholarship.academic_level.some(item => item.toLowerCase().includes(normalizedAcademicLevel));
+      if (matches) {
         score += 7;
       }
     }
 
     // Geographic restrictions matching
-    if (criteria.geographic_restrictions && scholarship.geographic_restrictions) {
-      if (scholarship.geographic_restrictions.toLowerCase().includes(criteria.geographic_restrictions.toLowerCase())) {
+    if (criteria.geographic_restrictions && scholarship.geographic_restrictions && scholarship.geographic_restrictions.length > 0) {
+      const normalizedGeo = criteria.geographic_restrictions.toLowerCase();
+      const matches = scholarship.geographic_restrictions.some(item => item.toLowerCase().includes(normalizedGeo));
+      if (matches) {
         score += 6;
       }
     }
@@ -207,8 +211,10 @@ export class ScholarshipSearchService {
       }
     }
 
-    if (criteria.ethnicity && scholarship.ethnicity) {
-      if (scholarship.ethnicity.toLowerCase() === criteria.ethnicity.toLowerCase()) {
+    if (criteria.ethnicity && scholarship.ethnicity && scholarship.ethnicity.length > 0) {
+      const normalizedEthnicity = criteria.ethnicity.toLowerCase();
+      const matches = scholarship.ethnicity.some(item => item.toLowerCase() === normalizedEthnicity);
+      if (matches) {
         score += 5;
       }
     }
@@ -222,7 +228,9 @@ export class ScholarshipSearchService {
   private buildSearchTextForScoring(scholarship: Scholarship): string {
     const textParts: string[] = [];
 
-    if (scholarship.eligibility) textParts.push(scholarship.eligibility);
+    if (scholarship.eligibility && scholarship.eligibility.length > 0) {
+      textParts.push(scholarship.eligibility.join(' '));
+    }
     if (scholarship.description) textParts.push(scholarship.description);
     if (scholarship.title) textParts.push(scholarship.title);
     if (scholarship.organization) textParts.push(scholarship.organization);
@@ -296,7 +304,9 @@ export class ScholarshipSearchService {
     const organizations = new Set<string>();
 
     scholarships.forEach(scholarship => {
-      if (scholarship.academic_level) academicLevels.add(scholarship.academic_level);
+      if (scholarship.academic_level && scholarship.academic_level.length > 0) {
+        scholarship.academic_level.forEach(level => academicLevels.add(level));
+      }
       if (scholarship.country) countries.add(scholarship.country);
       if (scholarship.organization) organizations.add(scholarship.organization);
     });

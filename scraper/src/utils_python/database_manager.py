@@ -47,23 +47,24 @@ class DatabaseManager(ABC):
         pass
 
     @staticmethod
-    def _normalize_subject_areas(subject_areas: Any) -> Optional[str]:
+    def _normalize_string_collection(value: Any, lowercase: bool = True) -> Optional[str]:
         def normalize_items(items) -> list[str]:
-            normalized_list = []
+            normalized_list: list[str] = []
             for item in items:
                 if isinstance(item, str):
-                    cleaned = item.strip().lower()
+                    cleaned = item.strip()
                 else:
-                    cleaned = str(item).strip().lower()
-                if cleaned:
-                    normalized_list.append(cleaned)
+                    cleaned = str(item).strip()
+                if not cleaned:
+                    continue
+                normalized_list.append(cleaned.lower() if lowercase else cleaned)
             return normalized_list
 
-        if subject_areas is None:
+        if value is None:
             return None
 
-        if isinstance(subject_areas, str):
-            trimmed = subject_areas.strip()
+        if isinstance(value, str):
+            trimmed = value.strip()
             if not trimmed:
                 return None
             try:
@@ -80,17 +81,38 @@ class DatabaseManager(ABC):
                 return None
             return json.dumps(normalized_list)
 
-        if isinstance(subject_areas, (list, tuple, set)):
-            normalized_list = normalize_items(subject_areas)
+        if isinstance(value, (list, tuple, set)):
+            normalized_list = normalize_items(value)
             if not normalized_list:
                 return None
             return json.dumps(normalized_list)
 
         # Fallback for other iterables or unexpected types
-        subject_str = str(subject_areas).strip().lower()
-        if not subject_str:
+        item_str = str(value).strip()
+        if not item_str:
             return None
-        return json.dumps([subject_str])
+        normalized_value = item_str.lower() if lowercase else item_str
+        return json.dumps([normalized_value])
+
+    @staticmethod
+    def _normalize_subject_areas(subject_areas: Any) -> Optional[str]:
+        return DatabaseManager._normalize_string_collection(subject_areas, lowercase=True)
+
+    @staticmethod
+    def _normalize_eligibility(eligibility: Any) -> Optional[str]:
+        return DatabaseManager._normalize_string_collection(eligibility, lowercase=True)
+
+    @staticmethod
+    def _normalize_ethnicity(ethnicity: Any) -> Optional[str]:
+        return DatabaseManager._normalize_string_collection(ethnicity, lowercase=True)
+
+    @staticmethod
+    def _normalize_academic_level(academic_level: Any) -> Optional[str]:
+        return DatabaseManager._normalize_string_collection(academic_level, lowercase=True)
+
+    @staticmethod
+    def _normalize_geographic_restrictions(geographic_restrictions: Any) -> Optional[str]:
+        return DatabaseManager._normalize_string_collection(geographic_restrictions, lowercase=True)
 
     @staticmethod
     def _normalize_deadline(deadline: Optional[str]) -> Optional[str]:
@@ -198,26 +220,42 @@ class LocalDatabaseManager(DatabaseManager):
                     data['subject_areas'] = normalized_subjects
 
             if 'eligibility' in data:
-                eligibility_value = data['eligibility']
-                if eligibility_value is None:
+                normalized_eligibility = self._normalize_eligibility(data['eligibility'])
+                if normalized_eligibility is None:
                     data.pop('eligibility', None)
                 else:
-                    normalized_eligibility = str(eligibility_value).strip().lower()
-                    if normalized_eligibility:
-                        data['eligibility'] = normalized_eligibility
-                    else:
-                        data.pop('eligibility', None)
+                    data['eligibility'] = normalized_eligibility
 
             if 'academic_level' in data:
-                academic_level_value = data['academic_level']
-                if academic_level_value is None:
+                normalized_academic_level = self._normalize_academic_level(data['academic_level'])
+                if normalized_academic_level is None:
                     data.pop('academic_level', None)
                 else:
-                    normalized_academic_level = str(academic_level_value).strip().lower()
-                    if normalized_academic_level:
-                        data['academic_level'] = normalized_academic_level
-                    else:
-                        data.pop('academic_level', None)
+                    data['academic_level'] = normalized_academic_level
+
+            if 'geographic_restrictions' in data:
+                normalized_geo = self._normalize_geographic_restrictions(data['geographic_restrictions'])
+                if normalized_geo is None:
+                    data.pop('geographic_restrictions', None)
+                else:
+                    data['geographic_restrictions'] = normalized_geo
+
+            if 'ethnicity' in data:
+                normalized_ethnicity = self._normalize_ethnicity(data['ethnicity'])
+                if normalized_ethnicity is None:
+                    data.pop('ethnicity', None)
+                else:
+                    data['ethnicity'] = normalized_ethnicity
+
+            if 'min_gpa' in data:
+                min_gpa_value = data['min_gpa']
+                if min_gpa_value is None or min_gpa_value == '':
+                    data.pop('min_gpa', None)
+                else:
+                    try:
+                        data['min_gpa'] = round(float(min_gpa_value), 2)
+                    except (TypeError, ValueError):
+                        data.pop('min_gpa', None)
             
             # Build INSERT ... ON DUPLICATE KEY UPDATE using unique(title, organization, deadline)
             placeholders = ', '.join(['%s'] * len(data))
@@ -448,26 +486,42 @@ class ProductionDatabaseManager(DatabaseManager):
                     data['subject_areas'] = normalized_subjects
 
             if 'eligibility' in data:
-                eligibility_value = data['eligibility']
-                if eligibility_value is None:
+                normalized_eligibility = self._normalize_eligibility(data['eligibility'])
+                if normalized_eligibility is None:
                     data.pop('eligibility', None)
                 else:
-                    normalized_eligibility = str(eligibility_value).strip().lower()
-                    if normalized_eligibility:
-                        data['eligibility'] = normalized_eligibility
-                    else:
-                        data.pop('eligibility', None)
+                    data['eligibility'] = normalized_eligibility
 
             if 'academic_level' in data:
-                academic_level_value = data['academic_level']
-                if academic_level_value is None:
+                normalized_academic_level = self._normalize_academic_level(data['academic_level'])
+                if normalized_academic_level is None:
                     data.pop('academic_level', None)
                 else:
-                    normalized_academic_level = str(academic_level_value).strip().lower()
-                    if normalized_academic_level:
-                        data['academic_level'] = normalized_academic_level
-                    else:
-                        data.pop('academic_level', None)
+                    data['academic_level'] = normalized_academic_level
+
+            if 'geographic_restrictions' in data:
+                normalized_geo = self._normalize_geographic_restrictions(data['geographic_restrictions'])
+                if normalized_geo is None:
+                    data.pop('geographic_restrictions', None)
+                else:
+                    data['geographic_restrictions'] = normalized_geo
+
+            if 'ethnicity' in data:
+                normalized_ethnicity = self._normalize_ethnicity(data['ethnicity'])
+                if normalized_ethnicity is None:
+                    data.pop('ethnicity', None)
+                else:
+                    data['ethnicity'] = normalized_ethnicity
+
+            if 'min_gpa' in data:
+                min_gpa_value = data['min_gpa']
+                if min_gpa_value is None or min_gpa_value == '':
+                    data.pop('min_gpa', None)
+                else:
+                    try:
+                        data['min_gpa'] = round(float(min_gpa_value), 2)
+                    except (TypeError, ValueError):
+                        data.pop('min_gpa', None)
             
             # Build INSERT ... ON DUPLICATE KEY UPDATE using unique(title, organization, deadline)
             placeholders = ', '.join(['%s'] * len(data))

@@ -161,7 +161,7 @@ class AIDiscoveryScraper(BaseScraper):
                     deadline=extracted_scholarship.deadline,
                     eligibility=extracted_scholarship.eligibility,
                     apply_url=extracted_scholarship.application_url,
-                    url=extracted_scholarship.source_url,
+                    source_url=extracted_scholarship.source_url,
                     source="AI Discovery",
                     country="US",
                     active=True,

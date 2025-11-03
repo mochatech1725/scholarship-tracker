@@ -18,4 +18,6 @@ GOOGLE_MIN_INTERVAL_BETWEEN_REQUESTS_SEC = 3.0  # Throttle between requests
 # Generic scraper request throttling (per-scraper minimum delay between requests)
 SCRAPER_MIN_REQUEST_DELAY_SEC = 1.0
 
+MAX_CAREERONESTOP_PAGES = 5
+
 

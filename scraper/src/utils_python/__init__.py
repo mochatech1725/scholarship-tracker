@@ -12,6 +12,7 @@ from .shared_keywords import (
     GEOGRAPHIC_KEYWORDS,
     get_keywords_by_category
 )
+from .helper import normalize_deadline_value
 
 __all__ = [
     # Config manager
@@ -29,4 +30,7 @@ __all__ = [
     'DEMOGRAPHIC_KEYWORDS',
     'GEOGRAPHIC_KEYWORDS',
     'get_keywords_by_category',
+    
+    # Data normalization
+    'normalize_deadline_value',
 ]
